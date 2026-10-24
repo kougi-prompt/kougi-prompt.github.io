@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>{{title}}</title>
+{{head}}
+<link rel="stylesheet" href="fonts/fonts.css">
+<link rel="stylesheet" href="site.css">
+</head>
+<body class="site-page">
+<header class="site-header">
+  <div class="wrap site-header-in">
+    <a class="site-brand" href="./">{{brand}}</a>
+    <a class="site-cta" href="./">ツールを使う</a>
+  </div>
+</header>
+<main class="wrap site-main">
+  <article class="article">
+    <p class="crumb"><a href="./">ホーム</a><span aria-hidden="true"> › </span>{{pageTitle}}</p>
+    <h1>{{pageTitle}}</h1>
+    {{meta}}
+    <div class="article-body">
+{{body}}
+    </div>
+  </article>
+{{after}}
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+{{nav}}
+    <p class="site-copy">{{copyright}}</p>
+  </div>
+</footer>
+{{scripts}}
+</body>
+</html>

@@ -1,0 +1,222 @@
+/* Webサイト版の共通スタイル：記事ページ、サイト内リンク、読みもの、広告枠。
+   色と書体はツール画面（src/app.html）と同じトークンを使う。 */
+:root {
+  --desk: #ECF0EE;
+  --card: #FAFCFB;
+  --line: #D3DCD8;
+  --line-strong: #B4C1BB;
+  --ink: #1A2521;
+  --ink-2: #4F5E58;
+  --ink-3: #66746E;
+  --board: #23574A;
+  --on-board: #FFFFFF;
+  --board-soft: #E0ECE6;
+  --sheet: #FFFFFF;
+  --rule: #DAE5F1;
+  --rule-top: #A8C0DB;
+  --pen: #2243A3;
+  --marker: #FFE45A;
+  --focus: #2243A3;
+  --font-hand: "Klee One", "UD Digi Kyokasho NK-R", "YuKyokasho", "Hiragino Mincho ProN", "Yu Mincho", serif;
+  --font-body: "Zen Kaku Gothic New", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic UI", "Yu Gothic", Meiryo, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --desk: #101A17; --card: #16221E; --line: #2A3A34; --line-strong: #3D5048;
+    --ink: #E6EDE8; --ink-2: #A6B6AF; --ink-3: #85968E;
+    --board: #E6EDE8; --on-board: #12201B; --board-soft: #23362E;
+    --sheet: #1D3A2F; --rule: rgb(230 237 232 / .08); --rule-top: rgb(230 237 232 / .24);
+    --pen: #9DC9F3; --marker: rgb(245 217 120 / .24); --focus: #9DC9F3;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --desk: #101A17; --card: #16221E; --line: #2A3A34; --line-strong: #3D5048;
+  --ink: #E6EDE8; --ink-2: #A6B6AF; --ink-3: #85968E;
+  --board: #E6EDE8; --on-board: #12201B; --board-soft: #23362E;
+  --sheet: #1D3A2F; --rule: rgb(230 237 232 / .08); --rule-top: rgb(230 237 232 / .24);
+  --pen: #9DC9F3; --marker: rgb(245 217 120 / .24); --focus: #9DC9F3;
+  color-scheme: dark;
+}
+
+/* ---- 記事・固定ページ ---- */
+.site-page {
+  margin: 0;
+  background: var(--desk);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.9;
+  -webkit-text-size-adjust: 100%;
+}
+.site-page *, .site-page *::before, .site-page *::after { box-sizing: border-box; }
+.site-page .wrap {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.site-page a { color: var(--pen); text-underline-offset: 3px; }
+.site-page :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+.site-header { padding-top: env(safe-area-inset-top, 0px); border-bottom: 1px solid var(--line); }
+.site-header-in { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 60px; }
+.site-brand { font-family: var(--font-hand); font-weight: 600; font-size: 19px; line-height: 1.3; color: var(--ink) !important; text-decoration: none; }
+.site-brand .hl, .readings .hl { background: linear-gradient(transparent 60%, var(--marker) 60%); }
+.site-cta {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  min-height: 38px;
+  padding: 0 14px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--on-board) !important;
+  background: var(--board);
+  border-radius: 10px;
+  text-decoration: none;
+}
+
+.site-main { display: grid; gap: 24px; padding-block: 28px 44px; }
+.article {
+  width: 100%;
+  max-width: 46em;
+  min-width: 0;
+  margin: 0 auto;
+  padding: 26px clamp(18px, 4vw, 40px) 34px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+}
+.crumb { margin: 0 0 8px; font-size: 13px; color: var(--ink-2); }
+.crumb a { color: var(--ink-2) !important; }
+.article h1 {
+  margin: 0 0 6px;
+  font-family: var(--font-hand);
+  font-weight: 600;
+  font-size: clamp(24px, 2.4vw + 14px, 32px);
+  line-height: 1.4;
+  text-wrap: balance;
+}
+.article-meta { margin: 0 0 22px; font-size: 13px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.article-body > :first-child { margin-top: 0; }
+.article-body h2 {
+  margin: 2.2em 0 .7em;
+  padding-bottom: .35em;
+  font-size: 20px;
+  line-height: 1.5;
+  border-bottom: 3px double var(--rule-top);
+  text-wrap: balance;
+}
+.article-body h3 { margin: 1.8em 0 .4em; font-size: 17px; line-height: 1.6; }
+.article-body p { margin: 0 0 1em; }
+.article-body ul, .article-body ol { margin: 0 0 1.2em; padding-left: 1.4em; }
+.article-body li { margin: .25em 0; }
+.article-body img {
+  display: block;
+  max-width: min(100%, 360px);
+  height: auto;
+  margin: 1.2em auto 1.6em;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+.article-body .table-wrap { margin: 0 0 1.4em; overflow-x: auto; }
+.article-body table { width: 100%; border-collapse: collapse; font-size: 14.5px; line-height: 1.7; }
+.article-body th, .article-body td { padding: 8px 10px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--line); }
+.article-body th { font-size: 13px; font-weight: 700; color: var(--ink-2); background: var(--desk); }
+/* プロンプトの例は、ツールと同じ「罫線のノート」で見せる */
+.article-body pre {
+  margin: 0 0 1.4em;
+  padding: 6px 18px 20px;
+  font-family: var(--font-body);
+  font-size: 14.5px;
+  line-height: 28px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  background-color: var(--sheet);
+  background-image: linear-gradient(to bottom, transparent 27px, var(--rule) 27px);
+  background-size: 100% 28px;
+  background-position: 0 6px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.article-body pre code { font: inherit; padding: 0; background: none; }
+.article-body code { font-family: var(--font-mono); font-size: .9em; padding: .1em .35em; background: var(--desk); border-radius: 4px; }
+.article-body blockquote { margin: 0 0 1.2em; padding: 12px 16px; background: var(--board-soft); border-radius: 12px; }
+.article-body blockquote p:last-child { margin-bottom: 0; }
+
+.cta-box {
+  width: 100%;
+  max-width: 46em;
+  margin: 0 auto;
+  padding: 18px 22px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  color: var(--on-board);
+  background: var(--board);
+  border-radius: 16px;
+}
+.cta-box p { margin: 0; font-weight: 700; line-height: 1.6; }
+.cta-box a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 42px;
+  padding: 0 18px;
+  font-weight: 700;
+  color: var(--board) !important;
+  background: var(--on-board);
+  border-radius: 10px;
+  text-decoration: none;
+}
+.related { width: 100%; max-width: 46em; margin: 0 auto; }
+.related h2 { margin: 0 0 8px; font-size: 14px; color: var(--ink-2); }
+.related ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.related a {
+  display: block;
+  padding: 12px 16px;
+  font-weight: 700;
+  line-height: 1.6;
+  color: var(--ink) !important;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  text-decoration: none;
+}
+.related a:hover { border-color: var(--line-strong); }
+
+/* ---- 記事ページとツール画面の共通部品 ---- */
+.site-footer { padding-block: 28px calc(40px + env(safe-area-inset-bottom, 0px)); font-size: 13.5px; color: var(--ink-2); border-top: 1px solid var(--line); }
+.site-nav { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 16px 32px; margin: 18px 0 0; }
+.site-footer .site-nav { margin-top: 0; }
+.site-nav-h { margin: 0 0 6px; font-size: 12.5px; font-weight: 700; letter-spacing: .06em; color: var(--ink-2); }
+.site-nav ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.site-nav a { font-size: 14px; color: var(--ink) !important; text-underline-offset: 3px; }
+.site-copy { margin: 18px 0 0; font-size: 12px; color: var(--ink-3); }
+
+.site-band { display: grid; gap: 20px; padding-block: 0 32px; }
+.readings h2 { margin: 0 0 10px; font-family: var(--font-hand); font-weight: 600; font-size: 20px; line-height: 1.3; }
+.reading-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); gap: 10px; }
+.reading-list a {
+  display: grid;
+  gap: 4px;
+  height: 100%;
+  padding: 14px 16px;
+  color: var(--ink);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  text-decoration: none;
+}
+.reading-list a:hover { border-color: var(--line-strong); }
+.r-title { font-size: 15px; font-weight: 700; line-height: 1.5; }
+.r-desc { font-size: 12.5px; line-height: 1.6; color: var(--ink-2); }
+
+/* 広告枠：広告であることがわかるように「広告」と表示する */
+.ad-slot { display: grid; gap: 4px; min-width: 0; text-align: center; }
+.ad-label { margin: 0; font-size: 11px; letter-spacing: .08em; color: var(--ink-3); }
+.ad-slot ins { display: block; min-height: 100px; }
+.ad-article { width: 100%; max-width: 46em; margin: 0 auto; }

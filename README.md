@@ -1,14 +1,9 @@
-# 講義プロンプトメーカー（iOS / Android アプリ）
+# 講義プロンプトメーカー
 
-Web 版の「講義プロンプトメーカー」を、App Store と Google Play に公開するためのプロジェクトです。
-[Capacitor](https://capacitorjs.com/)（Web の画面をそのままスマホアプリにする仕組み）を使っています。
+受けている講義のことを書いて、やりたいことを選ぶだけで、AIチャット（ChatGPT・Claude・Gemini など）に貼り付けるプロンプトを作る Web ツールです。
 
-アプリはオフラインで動き、入力内容は端末の中だけに保存します。アプリ版では次のネイティブ機能も使います。
-
-- 共有シート（作ったプロンプトを AI アプリやメモに直接送る）
-- 端末のクリップボードへのコピー
-- コピーしたときの振動フィードバック
-- 端末内の保存領域への保存（複数の講義を保存できる）
+- **Webサイト版**：このリポジトリから GitHub Pages に無料で公開でき、広告（Google AdSense など）を載せられます。この README はその手順です。
+- **アプリ版**（App Store / Google Play）：Mac と開発者登録が必要なため保留中です。手順は [`docs/app.md`](docs/app.md) にあります。
 
 ---
 
@@ -16,166 +11,127 @@ Web 版の「講義プロンプトメーカー」を、App Store と Google Play
 
 | 場所 | 内容 |
 | --- | --- |
-| `src/app.html` | アプリの画面（Web 版と共通）。**内容を変えるときはここを編集します** |
-| `scripts/build-web.mjs` | `src/app.html` からアプリ用の `www/` を作るスクリプト |
-| `www/` | アプリに同梱される画面（自動で作られる。直接は編集しない） |
-| `android/` | Android Studio で開くプロジェクト |
-| `ios/` | Xcode で開くプロジェクト |
-| `resources/` | アイコンと起動画面の元画像 |
-| `store/` | ストアに載せる画像と文章（`store/listing.md`） |
-| `docs/privacy.html` | プライバシーポリシー（Web 上に公開し、その URL をストアに登録する） |
-| `capacitor.config.json` | アプリ ID・アプリ名などの設定 |
+| `src/app.html` | ツール本体（Webサイト・アプリ・Claude のアーティファクトで共通） |
+| `site.config.mjs` | **サイトの設定**（運営者名、連絡先、公開URL、広告のID） |
+| `content/*.md` | 記事と固定ページ（使い方、コツ、よくある質問、プライバシーポリシーなど） |
+| `site-src/` | 記事ページの見た目（`layout.html`・`static/site.css`）と画像・アイコン |
+| `scripts/build-site.mjs` | 上の材料から公開用の `site/` を作るスクリプト |
+| `.github/workflows/deploy-site.yml` | main ブランチに push すると GitHub Pages に自動で公開する設定 |
+| `android/` `ios/` `resources/` `store/` `docs/` | アプリ版（保留中）のファイル |
 
 ---
 
-## 全体の流れと費用
+## 1. サイトを公開する（無料）
 
-| | App Store（iPhone / iPad） | Google Play（Android） |
-| --- | --- | --- |
-| 開発者登録 | Apple Developer Program：年 99 米ドル | Google Play Console：25 米ドル（1 回だけ） |
-| 必要なパソコン | **Mac**（最新の Xcode） | Windows / Mac / Linux（Android Studio） |
-| 公開前のテスト | TestFlight（任意） | 新しい**個人**アカウントは、**12 人以上のテスターで 14 日間**のクローズドテストが必須 |
-| 審査 | 多くは 1〜2 日 | 数日〜1 週間ほど |
+GitHub Pages を使います。無料プランの GitHub Pages は**公開（Public）リポジトリ**でしか使えないので、最初にリポジトリを公開にします。
 
-料金やルールは変わることがあります。登録のときに各ストアの最新の案内を確認してください。
+1. GitHub でこのリポジトリを開き、**Settings → General** の一番下（Danger Zone）の **Change visibility** で **Public** にします。
+2. **Settings → Pages** を開き、「Build and deployment」の **Source** を **GitHub Actions** にします。
+3. main ブランチに変更が入ると、自動でサイトが作られて公開されます。進み具合は **Actions** タブで見られます。すぐに公開したいときは、Actions タブの「Webサイトを公開」→ **Run workflow** で手動でも動かせます。
+4. 数分で `https://gazamidaiou-boop.github.io/kougi-prompt-app/` に公開されます。
 
----
-
-## 0. 公開する前に決めること
-
-1. **アプリ ID**（Android のパッケージ名／iOS の Bundle ID）
-   いまは `jp.kougiprompt.app` にしています。**ストアに一度アップロードすると変更できません。**
-   変えたい場合は、最初のアップロードの前に次の手順で作り直してください。
-   ```bash
-   # capacitor.config.json の "appId" を書き換えてから
-   rm -rf android ios
-   npx cap add android
-   npx cap add ios --packagemanager SPM
-   npx @capacitor/assets generate --ios --android --assetPath resources \
-     --iconBackgroundColor '#23574A' --iconBackgroundColorDark '#1B463B' \
-     --splashBackgroundColor '#ECF0EE' --splashBackgroundColorDark '#101A17'
-   # iOS の暗号化の申告を毎回聞かれないようにする設定を Info.plist に戻す
-   #（ios/App/App/Info.plist に ITSAppUsesNonExemptEncryption = NO を追加）
-   ```
-2. **アプリ名**：ストアでは「講義プロンプトメーカー」、ホーム画面では「講義プロンプト」と表示します（長い名前は途中で切れるため）。ホーム画面の名前は `capacitor.config.json` の `appName` で変えられます。
-3. **プライバシーポリシー**：`docs/privacy.html` の【運営者名】【お問い合わせ先のメールアドレス】を書き換え、Web 上に公開します（下の「プライバシーポリシーの公開」を参照）。両ストアとも URL の登録が必須です。
-4. **サポート用の連絡先**：App Store には「サポート URL」が必要です。プライバシーポリシーと同じサイトに簡単なページを置けば十分です。
+> リポジトリを非公開のままにしたい場合は、[Cloudflare Pages](https://pages.cloudflare.com/)（無料）でも公開できます。リポジトリをつないで、ビルドコマンドに `npm run build:site`、出力先に `site`、環境変数に `NODE_VERSION = 22` を設定してください。
 
 ---
 
-## 1. 準備（共通）
+## 2. 公開前に設定すること（`site.config.mjs`）
 
-1. [Node.js](https://nodejs.org/) 22 以上をインストールします。
-2. このフォルダでコマンドを実行します。
-   ```bash
-   npm install
-   npm run sync      # src/app.html → www/ を作り、Android / iOS に反映
-   ```
+GitHub の画面で `site.config.mjs` を開き、鉛筆のアイコンから直接書き換えられます（書き換えて「Commit changes」を押すと、自動で公開サイトに反映されます）。
 
----
+| 項目 | 書くこと |
+| --- | --- |
+| `operatorName` | 運営者名。ニックネームでも構いません |
+| `contactFormUrl` | お問い合わせ用のフォームのURL。[Google フォーム](https://www.google.com/forms/about/)で無料で作れて、メールアドレスを公開しなくて済むのでおすすめです |
+| `contactEmail` | フォームを使わない場合の連絡先メールアドレス |
+| `siteUrl` | 公開したURL（最後の `/` は付けない）。例：`https://gazamidaiou-boop.github.io/kougi-prompt-app` |
 
-## 2. Android（Google Play）
-
-### 動かしてみる
-1. [Android Studio](https://developer.android.com/studio) をインストールします（最新版。JDK 21 も同梱されています）。
-2. `npm run android` を実行すると Android Studio が開きます。
-3. 初回は Gradle の同期に数分かかります。終わったら ▶（Run）でエミュレータか実機（USB デバッグを有効にしたスマホ）で起動します。
-
-### ストアに出すファイル（AAB）を作る
-1. バージョンを確認します：`android/app/build.gradle` の `versionCode`（更新のたびに 1 ずつ増やす整数）と `versionName`（表示用の "1.0" など）。
-2. Android Studio のメニュー **Build → Generate Signed App Bundle or APK → Android App Bundle** を選びます。
-3. 「Create new…」で**アップロード鍵（.jks ファイル）**を作ります。
-   **鍵ファイルとパスワードは絶対になくさないでください。** クラウドなど安全な場所にバックアップしておきます（このフォルダの `.gitignore` で Git には入らないようにしています）。
-4. `release` を選んで作成すると、`android/app/release/app-release.aab` ができます。
-
-### Play Console での手続き
-1. [Google Play Console](https://play.google.com/console) でデベロッパー登録をします（本人確認があります）。
-2. 「アプリを作成」：アプリ名「講義プロンプトメーカー」、言語は日本語、アプリ（ゲームではない）、無料。
-3. **ストアの掲載情報**：`store/listing.md` の文章と、`store/google-play/` の画像（アイコン 512px、フィーチャーグラフィック、スクリーンショット）を登録します。
-4. **アプリのコンテンツ**（左メニュー「ポリシー」→「アプリのコンテンツ」）
-   - プライバシーポリシー：公開した URL
-   - 広告：含まない
-   - アプリのアクセス権：すべての機能を制限なしで利用可能（ログインなし）
-   - コンテンツのレーティング：質問票に回答（暴力などはすべて「いいえ」）
-   - ターゲットユーザー：大学生向けなので「18 歳以上」を選ぶのがおすすめです（18 歳未満を含めると子ども向けの追加ポリシーが適用されます）
-   - データセーフティ：「データを収集・共有しない」
-5. **テスト**：「テスト → クローズドテスト」でトラックを作り、AAB をアップロードしてテスターを招待します。
-   個人アカウントは **12 人以上が 14 日間参加**したあとで、製品版の公開を申請できます（友人やゼミの仲間に頼むのが現実的です）。
-6. **製品版**：「製品版」に AAB をアップロードして審査に提出します。
+運営者名と連絡先は、プライバシーポリシーと「このサイトについて」「お問い合わせ」のページに表示されます。広告の審査でも確認されるので、公開前に必ず埋めてください。
 
 ---
 
-## 3. iOS（App Store）
+## 3. 広告を載せる（Google AdSense）
 
-### 動かしてみる
-1. Mac に [Xcode](https://apps.apple.com/jp/app/xcode/id497799835) をインストールします（最新版）。
-2. `npm run ios` を実行すると Xcode が開きます。必要なライブラリは Swift Package Manager が自動で取得します（CocoaPods は不要です）。
-3. 画面上部で iPhone シミュレータを選んで ▶ で起動します。
+### 申し込む前に知っておくこと
 
-### Apple Developer Program と署名
-1. [Apple Developer Program](https://developer.apple.com/jp/programs/) に登録します（年額。審査に 1〜2 日かかることがあります）。
-2. Xcode で `App` ターゲット → **Signing & Capabilities** を開き、「Automatically manage signing」をオンにして **Team** に自分のアカウントを選びます。
-3. Bundle Identifier が `jp.kougiprompt.app`（または自分で決めた ID）になっていることを確認します。
+- AdSense に申し込めるのは **18 歳以上**です。
+- **独自ドメイン**（例：`kougi-prompt.com`、年 1,500 円前後から）があると審査に通りやすいと言われています。また、`〜.github.io/kougi-prompt-app/` のようにサブフォルダのURLだと、広告に必要な `ads.txt` をサイトのいちばん上の階層に置けません。
+  - 無料のまま試すなら、リポジトリ名を `gazamidaiou-boop.github.io` に変えると、`https://gazamidaiou-boop.github.io/` で公開されて `ads.txt` も置けるようになります。
+- 審査では、サイトに十分な内容があるかを見られます。記事・プライバシーポリシー・お問い合わせのページは用意してありますが、申し込む前に自分の体験をもとにした記事を 1〜2 本足すと、さらに通りやすくなります（書き方は「4. 記事を書く・直す」）。
 
-### App Store Connect に提出
-1. [App Store Connect](https://appstoreconnect.apple.com/) で「新規 App」を作成：プラットフォーム iOS、名前「講義プロンプトメーカー」、言語は日本語、Bundle ID を選択。
-2. Xcode で実行先を「Any iOS Device」にして **Product → Archive**。完了したら **Distribute App → App Store Connect → Upload**。
-3. 数十分で App Store Connect の「TestFlight」にビルドが表示されます。自分の iPhone の TestFlight アプリで動作を確認できます。
-4. App の情報を入力します（文章は `store/listing.md`）。
-   - スクリーンショット：`store/app-store/iphone-6.9/`（iPhone 6.9 インチ）と `store/app-store/ipad-13/`（iPad 13 インチ）
-   - プライバシーポリシー URL、サポート URL
-   - **App のプライバシー**：「データを収集していません」
-   - 年齢制限：質問票はすべて「なし」
-   - **App Review に関する情報**：`store/listing.md` の「審査メモ」を貼り付け
-5. ビルドを選んで「審査へ提出」。
+### 手順
 
----
+1. [Google AdSense](https://adsense.google.com/) に申し込み、公開したサイトのURLを登録します。
+2. 表示される **サイト運営者 ID**（`ca-pub-` で始まる番号）を、`site.config.mjs` の `ads.adsenseClient` に書きます。審査用のコードと `ads.txt` が自動でサイトに入ります。
+3. AdSense の画面で審査をリクエストします。結果が出るまで数日から数週間かかります。
+4. 承認されたら、AdSense の **広告 → 広告ユニットごと → ディスプレイ広告** で広告ユニットを作り、表示される `data-ad-slot` の番号を `site.config.mjs` の `slots` に書きます。
 
-## 4. 内容を更新するとき
+   | 名前 | 表示される場所 |
+   | --- | --- |
+   | `afterTasks` | ツール画面の「やりたいこと」の下 |
+   | `beforeFooter` | ツール画面の下のほう（読みものの下） |
+   | `article` | 記事ページの本文の下 |
 
-1. `src/app.html` を編集します（Web 版と同じファイルです）。
-2. `npm run sync` を実行します。
-3. バージョンを上げます。
-   - Android：`android/app/build.gradle` の `versionCode` を +1、`versionName` を新しい番号に
-   - iOS：Xcode の `App` ターゲット → General の **Version**（例 1.1）と **Build**（例 2）
-4. 上の手順と同じようにアップロードして審査に出します。
+   設定した場所にだけ、「広告」と表示された枠が出ます（空の場所には何も出ません）。
 
----
+5. AdSense の「自動広告」を使う場合は、**アンカー広告**と**モバイル全画面広告**をオフにしてください。スマホで画面の下に出るコピーボタンと重なり、ツールが使いにくくなります。
 
-## 5. 審査で気をつけること
+### 審査に通らなかったら
 
-- **最低限の機能（Apple 審査ガイドライン 4.2）**：Web サイトを包んだだけのアプリは却下されることがあります。このアプリはネット接続なしで動き、共有シート・クリップボード・触覚フィードバック・端末内保存を使っています。審査メモでもそのことを説明しています。それでも 4.2 で却下された場合は、試験日の通知（ローカル通知）などのネイティブ機能を足して再提出するのが定番の対策です。
-- **他社の商標**：アプリ名・サブタイトル・キーワード・アイコンに「ChatGPT」「Claude」「Gemini」などを入れないでください。説明文では対応サービスとして触れる程度にとどめ、「これらの会社とは関係ありません」と書いています。
-- **レポートの全文作成**：アプリ内の注意書きは残してください。ストアの説明文で「レポート代行」「丸写しで提出」のような書き方はしないでください。
-- **プライバシー**：広告や解析ツールを後から追加した場合は、プライバシーポリシーとストアの申告（App のプライバシー、データセーフティ）を必ず更新してください。
+- 「有用性の低いコンテンツ」と言われた場合は、記事を増やしたり、独自ドメインに移ったりしてから、しばらくして申し込み直します。
+- 審査なしで始められる広告サービス（忍者AdMax など）もあります。管理画面で作った広告タグを `slots` の `html` にそのまま貼ってください。そのときは、`content/privacy.md` の広告サービスの名前も書き換えます。
+
+### 守らないといけないこと
+
+- **自分の広告をクリックしたり、人にクリックを頼んだりしてはいけません。** AdSense のアカウントが停止される原因になります。
+- 広告であることがわかるよう、広告枠には「広告」と表示しています。消さないでください。
+
+### お金のこと
+
+- 収益はアクセス数しだいです。アクセスが少ないうちは、月に数百円ということも珍しくありません。
+- AdSense の収益は、残高が一定額（日本では 8,000 円）以上になると振り込まれます。
+- 広告収入は所得になります。金額によっては学生でも申告が必要になるので、収益が出てきたら確認しましょう。
 
 ---
 
-## 6. プライバシーポリシーの公開（GitHub Pages の例）
+## 4. 記事を書く・直す
 
-1. GitHub で新しいリポジトリを作り、このフォルダを push します。
-2. リポジトリの **Settings → Pages** で、Branch を `main`、フォルダを `/docs` にして保存します。
-3. 数分後、`https://<ユーザー名>.github.io/<リポジトリ名>/privacy.html` で公開されます。この URL をストアに登録します。
+記事と固定ページは `content/` の Markdown ファイルです。GitHub の画面で直接書き換えても、新しいファイルを追加してもかまいません。
+
+ファイルの先頭には、次のような情報を書きます。
+
+```markdown
+---
+title: 記事のタイトル
+description: 検索結果に出る説明（100文字くらい）
+card: トップページの「読みもの」に出る短い説明
+type: article        # article＝記事（読みものに並び、広告枠あり）／page＝固定ページ
+order: 5             # 並び順（小さいほど前）
+updated: 2026-10-24
+---
+```
+
+- 画像は `site-src/static/images/` に置き、本文から `![説明](images/ファイル名.png)` で使います。
+- 本文中の `{{operatorName}}`（運営者名）、`{{contactBlock}}`（連絡先）、`{{siteName}}`（サイト名）は、`site.config.mjs` の内容に自動で置き換わります。
 
 ---
 
-## 7. 画像を作り直すとき（任意）
+## 5. 手元のパソコンで確かめる（任意）
 
-アイコン・起動画面・ストア用スクリーンショットは `scripts/make-images.cjs` で作っています。画面を変えたあとにスクリーンショットを撮り直す場合は、次のように実行します。
+[Node.js](https://nodejs.org/) 22 以上を入れて、このフォルダで次を実行すると、`http://localhost:8080` で公開前のサイトを見られます。
 
 ```bash
-npm i -D playwright && npx playwright install chromium
-npm run build
-node scripts/make-images.cjs
-npx @capacitor/assets generate --ios --android --assetPath resources \
-  --iconBackgroundColor '#23574A' --iconBackgroundColorDark '#1B463B' \
-  --splashBackgroundColor '#ECF0EE' --splashBackgroundColorDark '#101A17'
+npm install
+npm run preview:site
 ```
 
 ---
 
-## 動作環境（このプロジェクトの設定）
+## 6. ツール本体を直す
 
-- Capacitor 8.5.3
-- Android：最小 Android 7.0（API 24）、ターゲット API 36、Java 21
-- iOS：iOS 15 以上、iPhone と iPad の両方に対応
+ツール本体は `src/app.html` です。Webサイト・アプリ・Claude のアーティファクトで同じファイルを使っています。直したら main ブランチに push すると、サイトに反映されます。
+
+---
+
+## アプリ版について
+
+App Store / Google Play に出すためのファイル（`android/`、`ios/` など）と手順（[`docs/app.md`](docs/app.md)）は、そのまま残してあります。Mac が手に入ったときなどに使えます。
