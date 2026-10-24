@@ -1,0 +1,2008 @@
+<title>講義プロンプトメーカー</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=Klee+One:wght@400;600&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+<style>
+/* Layout: a study desk. Lecture card and task tray on the left, the ruled notebook page on the right where the prompt is written; in dark mode that page becomes the blackboard and the writing turns to chalk. */
+:root {
+  --desk: #ECF0EE;
+  --card: #FAFCFB;
+  --field: #FFFFFF;
+  --line: #D3DCD8;
+  --line-strong: #B4C1BB;
+  --ink: #1A2521;
+  --ink-2: #4F5E58;
+  --ink-3: #66746E;
+  --board: #23574A;
+  --board-hover: #1A4539;
+  --on-board: #FFFFFF;
+  --board-soft: #E0ECE6;
+  --heading: #23574A;
+  --sheet: #FFFFFF;
+  --sheet-edge: #D8E0DC;
+  --rule: #DAE5F1;
+  --rule-top: #A8C0DB;
+  --pen: #2243A3;
+  --marker: #FFE45A;
+  --marker-ink: #1A2521;
+  --red: #B23535;
+  --focus: #2243A3;
+  --knob: #FFFFFF;
+  --warn-bg: #FBEEEC;
+  --warn-line: #E9BDB8;
+  --toast-bg: #1A2521;
+  --toast-ink: #F4F7F5;
+  --shadow: 0 1px 1px rgb(26 37 33 / .05), 0 14px 32px -18px rgb(26 37 33 / .30);
+  --shadow-up: 0 -10px 24px -18px rgb(26 37 33 / .35);
+
+  --font-hand: "Klee One", "UD Digi Kyokasho NK-R", "YuKyokasho", "Hiragino Mincho ProN", "Yu Mincho", serif;
+  --font-body: "Zen Kaku Gothic New", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic UI", "Yu Gothic", Meiryo, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --rule-h: 28px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --desk: #101A17; --card: #16221E; --field: #101A17; --line: #2A3A34; --line-strong: #3D5048;
+    --ink: #E6EDE8; --ink-2: #A6B6AF; --ink-3: #85968E;
+    --board: #E6EDE8; --board-hover: #FFFFFF; --on-board: #12201B; --board-soft: #23362E; --heading: #FFFFFF;
+    --sheet: #1D3A2F; --sheet-edge: #2F4D41; --rule: rgb(230 237 232 / .08); --rule-top: rgb(230 237 232 / .24);
+    --pen: #9DC9F3; --marker: rgb(245 217 120 / .24); --marker-ink: #F5D978; --red: #F2A5AD; --focus: #9DC9F3;
+    --knob: #A6B6AF; --warn-bg: rgb(242 165 173 / .09); --warn-line: rgb(242 165 173 / .32); --toast-bg: #E6EDE8; --toast-ink: #12201B;
+    --shadow: 0 1px 1px rgb(0 0 0 / .3), 0 18px 40px -20px rgb(0 0 0 / .7);
+    --shadow-up: 0 -10px 24px -18px rgb(0 0 0 / .6);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --desk: #101A17; --card: #16221E; --field: #101A17; --line: #2A3A34; --line-strong: #3D5048;
+  --ink: #E6EDE8; --ink-2: #A6B6AF; --ink-3: #85968E;
+  --board: #E6EDE8; --board-hover: #FFFFFF; --on-board: #12201B; --board-soft: #23362E; --heading: #FFFFFF;
+  --sheet: #1D3A2F; --sheet-edge: #2F4D41; --rule: rgb(230 237 232 / .08); --rule-top: rgb(230 237 232 / .24);
+  --pen: #9DC9F3; --marker: rgb(245 217 120 / .24); --marker-ink: #F5D978; --red: #F2A5AD; --focus: #9DC9F3;
+  --knob: #A6B6AF; --warn-bg: rgb(242 165 173 / .09); --warn-line: rgb(242 165 173 / .32); --toast-bg: #E6EDE8; --toast-ink: #12201B;
+  --shadow: 0 1px 1px rgb(0 0 0 / .3), 0 18px 40px -20px rgb(0 0 0 / .7);
+  --shadow-up: 0 -10px 24px -18px rgb(0 0 0 / .6);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--desk);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.7;
+  -webkit-text-size-adjust: 100%;
+}
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+:where(button, select, summary, a, [tabindex]):focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+.wrap {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.i { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ---- masthead ---- */
+.mast { padding-block: 28px 18px; }
+.mast-title {
+  margin: 0;
+  font-family: var(--font-hand);
+  font-weight: 600;
+  font-size: clamp(26px, 5.4vw + 6px, 40px);
+  line-height: 1.3;
+  letter-spacing: .02em;
+  text-wrap: balance;
+}
+.mast-title .hl { background: linear-gradient(transparent 60%, var(--marker) 60%); padding-inline: .06em; }
+.mast-lede { margin: 8px 0 0; color: var(--ink-2); max-width: 46em; font-size: 14.5px; line-height: 1.8; }
+
+/* ---- layout ---- */
+.layout { display: grid; gap: 20px; align-items: start; padding-block: 4px 40px; }
+.col { display: grid; gap: 20px; min-width: 0; }
+@media (min-width: 960px) {
+  .layout { grid-template-columns: minmax(0, 1fr) minmax(0, 1.12fr); gap: 24px; }
+}
+
+.panel {
+  display: grid;
+  gap: 16px;
+  align-content: start;
+  min-width: 0;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 20px;
+}
+@media (max-width: 480px) { .panel { padding: 16px; border-radius: 14px; } }
+.panel-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.step-h {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-hand);
+  font-weight: 600;
+  font-size: 20px;
+  line-height: 1.3;
+}
+.step-n {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  flex: none;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+  color: var(--heading);
+  font-size: 15px;
+  line-height: 1;
+}
+
+/* ---- form ---- */
+.field { display: grid; gap: 7px; min-width: 0; }
+.label, .opt-label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 8px;
+  font-size: 13px;
+  font-weight: 700;
+}
+.opt-label { font-size: 12.5px; color: var(--ink-2); }
+.hint { font-weight: 400; font-size: 12px; color: var(--ink-2); }
+.input {
+  width: 100%;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--ink);
+  background: var(--field);
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  padding: 9px 12px;
+}
+textarea.input { resize: vertical; min-height: 4.6em; }
+.input::placeholder { color: var(--ink-3); opacity: 1; }
+.input:focus { outline: 2px solid var(--focus); outline-offset: 0; border-color: transparent; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 6px 13px;
+  font-size: 13.5px;
+  line-height: 1.3;
+  color: var(--ink);
+  background: var(--field);
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  transition: background-color .15s, border-color .15s, color .15s;
+}
+.chip:hover { border-color: var(--ink-2); }
+.chip[aria-pressed="true"] { background: var(--board); border-color: var(--board); color: var(--on-board); }
+.chip .auto { font-size: 10.5px; line-height: 1; padding: 3px 5px; border: 1px solid currentColor; border-radius: 4px; opacity: .9; }
+.chips.sm .chip { min-height: 32px; padding: 5px 11px; font-size: 13px; }
+
+/* lecture switcher */
+.lec-bar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.lec {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  min-height: 38px;
+  padding: 5px 12px 5px 6px;
+  font-size: 13.5px;
+  color: var(--ink);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.lec.no-slot { padding-left: 12px; }
+.lec:hover { border-color: var(--line-strong); }
+.lec[aria-pressed="true"] { background: var(--board-soft); border-color: var(--board); font-weight: 700; }
+.lec-slot {
+  padding: 2px 7px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--heading);
+  background: var(--board-soft);
+  border: 1px solid var(--line);
+}
+.lec[aria-pressed="true"] .lec-slot { background: var(--card); }
+.lec-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 14em; }
+.lec-tag { font-size: 11px; font-weight: 700; line-height: 1.4; color: var(--red); border: 1px solid currentColor; border-radius: 4px; padding: 0 4px; }
+.lec-add { padding-left: 10px; color: var(--ink-2); border-style: dashed; }
+.lec-add .i { width: 16px; height: 16px; }
+
+.sample-note {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  padding: 10px 12px;
+  font-size: 13px;
+  color: var(--ink-2);
+  border: 1px dashed var(--line-strong);
+  border-radius: 10px;
+}
+.sample-note p { margin: 0; }
+
+.more { border: 1px solid var(--line); border-radius: 12px; background: var(--desk); min-width: 0; }
+.more > summary {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  padding: 11px 14px;
+  list-style: none;
+  cursor: pointer;
+  font-size: 13.5px;
+  font-weight: 700;
+  border-radius: 12px;
+}
+.more > summary::-webkit-details-marker { display: none; }
+.more > summary .i { width: 16px; height: 16px; color: var(--ink-2); transition: transform .2s; }
+.more[open] > summary .i { transform: rotate(180deg); }
+.more-vals { flex: 1 1 12em; min-width: 0; font-weight: 400; font-size: 12.5px; color: var(--ink-2); }
+.more-body { display: grid; gap: 16px; padding: 4px 14px 16px; }
+.slot-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.slot-row .input { width: auto; min-width: 7.5em; }
+
+.lec-foot { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px 16px; }
+.save-note { margin: 0; font-size: 12px; color: var(--ink-2); }
+.text-btn {
+  padding: 4px 0;
+  font-size: 12.5px;
+  color: var(--ink-2);
+  background: none;
+  border: 0;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.text-btn:hover { color: var(--red); }
+.del-confirm { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 12.5px; }
+
+/* ---- tasks ---- */
+.task-groups { display: grid; gap: 18px; }
+.task-group { display: grid; gap: 8px; }
+.task-group h3 { margin: 0; font-size: 12.5px; font-weight: 700; letter-spacing: .08em; color: var(--ink-2); }
+.task-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+@media (max-width: 340px) { .task-grid { grid-template-columns: minmax(0, 1fr); } }
+.task {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  column-gap: 10px;
+  row-gap: 2px;
+  align-items: start;
+  min-height: 66px;
+  padding: 11px 12px;
+  text-align: left;
+  color: var(--ink);
+  background: var(--field);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  transition: border-color .15s, background-color .15s;
+}
+.task .i { grid-row: span 2; width: 22px; height: 22px; margin-top: 1px; color: var(--ink-2); }
+.task-t { font-size: 14px; font-weight: 700; line-height: 1.45; }
+.task-d { font-size: 12px; line-height: 1.5; color: var(--ink-2); }
+.task:hover { border-color: var(--line-strong); }
+.task[aria-pressed="true"] { background: var(--board-soft); border-color: var(--board); box-shadow: inset 0 0 0 1px var(--board); }
+.task[aria-pressed="true"] .i { color: var(--heading); }
+.task-tag { margin-left: 6px; padding: 0 4px; font-size: 10.5px; font-weight: 700; line-height: 1.4; color: var(--red); border: 1px solid currentColor; border-radius: 4px; vertical-align: 1px; white-space: nowrap; }
+.task-grid > .task:last-child:nth-child(odd) { grid-column: 1 / -1; }
+
+/* ---- output ---- */
+.out { display: flex; flex-direction: column; gap: 14px; }
+.out-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 12px; }
+.out-task { margin: 0; display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; color: var(--ink-2); }
+.out-task .i { color: var(--heading); }
+.notice { display: grid; gap: 6px; padding: 12px 14px; font-size: 13px; line-height: 1.7; background: var(--warn-bg); border: 1px solid var(--warn-line); border-radius: 12px; }
+.notice-title { margin: 0; display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 700; color: var(--red); }
+.notice-title .i { width: 18px; height: 18px; }
+.notice ul { margin: 0; padding-left: 1.3em; display: grid; gap: 3px; }
+
+.opts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr));
+  gap: 14px 18px;
+  padding: 14px;
+  background: var(--desk);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.opt { display: grid; gap: 6px; align-content: start; min-width: 0; }
+.opt-wide { grid-column: 1 / -1; }
+.opt .input { font-size: 14.5px; }
+.date-row { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+.date-row .input { width: auto; }
+.date-left { font-size: 13px; font-weight: 700; color: var(--heading); }
+
+.toggle { position: relative; display: inline-flex; align-items: center; gap: 10px; font-size: 13.5px; font-weight: 500; cursor: pointer; }
+.toggle input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.toggle-ui { position: relative; width: 38px; height: 22px; flex: none; border-radius: 999px; background: var(--line-strong); transition: background-color .15s; }
+.toggle-ui::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: var(--knob); transition: transform .15s; }
+.toggle input:checked + .toggle-ui { background: var(--board); }
+.toggle input:checked + .toggle-ui::after { transform: translateX(16px); background: var(--on-board); }
+.toggle input:focus-visible + .toggle-ui { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+.sheet {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--sheet);
+  border: 1px solid var(--sheet-edge);
+  border-radius: 6px;
+  box-shadow: var(--shadow);
+}
+.sheet-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 2px 12px;
+  padding: 14px 20px 10px;
+  border-bottom: 3px double var(--rule-top);
+}
+.sheet-title { flex: 1 0 auto; max-width: 100%; font-family: var(--font-hand); font-weight: 600; font-size: 18px; line-height: 1.4; }
+.sheet-date { font-family: var(--font-mono); font-size: 11px; letter-spacing: .12em; color: var(--ink-3); white-space: nowrap; }
+.legend { display: flex; flex-wrap: wrap; gap: 2px 16px; padding: 8px 20px 0; font-size: 12px; color: var(--ink-2); }
+.edit-note { margin: 0; padding: 8px 20px 0; font-size: 12px; color: var(--ink-2); }
+.stale {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin: 8px 20px 0;
+  padding: 8px 12px;
+  font-size: 12.5px;
+  color: var(--ink-2);
+  border: 1px dashed var(--line-strong);
+  border-radius: 8px;
+}
+.sheet-body {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 8px 20px 28px;
+  font-family: var(--font-body);
+  font-size: 14.5px;
+  line-height: var(--rule-h);
+  color: var(--ink);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  tab-size: 4;
+  background-color: transparent;
+  background-image: linear-gradient(to bottom, transparent calc(var(--rule-h) - 1px), var(--rule) calc(var(--rule-h) - 1px));
+  background-size: 100% var(--rule-h);
+  background-position: 0 8px;
+  background-attachment: local;
+}
+.sheet-body:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+.sheet-edit { border: 0; border-radius: 0 0 6px 6px; resize: none; min-height: 440px; }
+.sheet-edit:focus { outline: 2px solid var(--focus); outline-offset: -2px; }
+.sheet-body .h { font-weight: 700; color: var(--heading); }
+.v { color: var(--pen); }
+mark { background: none; color: inherit; }
+mark.ph, .ph-count {
+  background: linear-gradient(transparent 55%, var(--marker) 55%);
+  color: var(--marker-ink);
+  font-weight: 500;
+}
+
+.out-actions { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px 12px; }
+.meta { margin: 0; display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12.5px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.btns { display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto; }
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 0 16px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+  background: var(--field);
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  white-space: nowrap;
+}
+.btn:hover { border-color: var(--ink-2); }
+.btn .i { width: 18px; height: 18px; }
+.btn.primary { padding: 0 22px; color: var(--on-board); background: var(--board); border-color: var(--board); }
+.btn.primary:hover { background: var(--board-hover); border-color: var(--board-hover); }
+.btn.small { min-height: 32px; padding: 0 12px; font-size: 13px; }
+.btn.danger { color: var(--red); background: transparent; border-color: currentColor; }
+
+.howto { margin: 0; padding: 12px 16px 12px 36px; display: grid; gap: 2px; font-size: 13px; color: var(--ink-2); background: var(--desk); border-radius: 12px; }
+
+@media (min-width: 960px) {
+  .out {
+    position: sticky;
+    top: calc(env(safe-area-inset-top, 0px) + 16px);
+    max-height: calc(100vh - 32px);
+    max-height: calc(100dvh - 32px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+    overflow: auto;
+  }
+  .sheet { flex: 1 1 auto; min-height: 320px; }
+  .sheet-body { flex: 1 1 auto; min-height: 0; overflow: auto; }
+  .sheet-edit { min-height: 0; }
+}
+
+/* ---- footer ---- */
+.foot { border-top: 1px solid var(--line); padding-block: 24px 40px; font-size: 13px; color: var(--ink-2); }
+.foot h2 { margin: 0 0 8px; font-size: 13px; font-weight: 700; color: var(--ink); }
+.foot ul { margin: 0; padding-left: 1.2em; display: grid; gap: 4px; max-width: 62em; }
+
+/* ---- phone copy bar ---- */
+.mbar { display: none; }
+.mbar-info { min-width: 0; display: grid; padding: 0; text-align: left; background: none; border: 0; line-height: 1.4; }
+.mbar-label { font-size: 11px; color: var(--ink-2); }
+.mbar-task { font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 959.98px) {
+  .mbar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding-top: 10px;
+    padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    background: var(--card);
+    border-top: 1px solid var(--line);
+    box-shadow: var(--shadow-up);
+  }
+  body { padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px)); }
+}
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  z-index: 30;
+  width: max-content;
+  max-width: calc(100vw - 32px);
+  padding: 10px 16px;
+  font-size: 13.5px;
+  font-weight: 500;
+  text-align: center;
+  color: var(--toast-ink);
+  background: var(--toast-bg);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, 12px);
+  transition: opacity .2s, transform .2s;
+}
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+@media (max-width: 959.98px) { .toast { bottom: calc(80px + env(safe-area-inset-bottom, 0px)); } }
+
+.foot-legal { margin: 14px 0 0; font-size: 12px; max-width: 62em; }
+.foot-links { margin: 8px 0 0; font-size: 12.5px; }
+.foot-links a { color: var(--ink-2); text-underline-offset: 3px; }
+
+/* phones and the app: paint the status bar band so content scrolls under a solid color */
+body::before { content: ""; position: fixed; inset: 0 0 auto; z-index: 15; height: env(safe-area-inset-top, 0px); background: var(--desk); pointer-events: none; }
+/* iOS zooms into fields whose text is smaller than 16px */
+@media (hover: none) and (pointer: coarse) {
+  .input, .opt .input, .sheet-body.sheet-edit { font-size: 16px; }
+}
+.btn.icon-only { width: 42px; padding: 0; }
+.mbar-btns { display: flex; gap: 8px; flex: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+}
+</style>
+
+<header class="mast">
+  <div class="wrap">
+    <h1 class="mast-title">講義<span class="hl">プロンプト</span>メーカー</h1>
+    <p class="mast-lede">受けている講義のことを書いて、やりたいことを選ぶだけ。ChatGPT・Claude・Gemini など、ふだん使っているAIにそのまま貼り付けられるプロンプトができあがります。</p>
+  </div>
+</header>
+
+<main class="wrap layout">
+  <div class="col">
+    <section class="panel" aria-labelledby="h-lecture">
+      <div class="panel-head">
+        <h2 class="step-h" id="h-lecture"><span class="step-n">1</span>講義のこと</h2>
+      </div>
+
+      <div class="lec-bar" id="lec-tabs" role="group" aria-label="マイ講義"></div>
+
+      <div class="sample-note" id="sample-note" hidden>
+        <p>入力例が入っています。自分の講義の内容に書き換えてください。</p>
+        <button type="button" class="btn small" id="clear-sample">空欄にする</button>
+      </div>
+
+      <div class="field">
+        <label class="label" for="lec-name">講義名</label>
+        <input class="input" id="lec-name" type="text" autocomplete="off" placeholder="例）ミクロ経済学Ⅰ">
+      </div>
+      <div class="field">
+        <label class="label" for="lec-desc">どんな講義？<span class="hint">内容・進め方・苦手なところなど、自由に</span></label>
+        <textarea class="input" id="lec-desc" rows="4" placeholder="例）消費者と企業の行動をグラフと数式で分析する講義。毎回スライドのPDFが配られる。グラフの読み取りが苦手。"></textarea>
+      </div>
+      <div class="field">
+        <span class="label" id="l-field">分野<span class="hint">講義名から自動で選ばれます</span></span>
+        <div class="chips" id="field-chips" role="group" aria-labelledby="l-field"></div>
+      </div>
+
+      <details class="more" id="lec-more">
+        <summary><svg class="i" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 9l6 6 6-6"/></svg><span>くわしい設定</span><span class="more-vals" id="more-vals"></span></summary>
+        <div class="more-body">
+          <div class="field">
+            <span class="label" id="l-year">学年</span>
+            <div class="chips" id="year-chips" role="group" aria-labelledby="l-year"></div>
+          </div>
+          <div class="field">
+            <span class="label" id="l-level">いまの理解度</span>
+            <div class="chips" id="level-chips" role="group" aria-labelledby="l-level"></div>
+          </div>
+          <div class="field">
+            <span class="label" id="l-format">講義の形式</span>
+            <div class="chips" id="format-chips" role="group" aria-labelledby="l-format"></div>
+          </div>
+          <div class="field">
+            <span class="label" id="l-eval">評価方法<span class="hint">複数選べます</span></span>
+            <div class="chips" id="eval-chips" role="group" aria-labelledby="l-eval"></div>
+          </div>
+          <div class="field">
+            <span class="label" id="l-slot">時間割<span class="hint">講義の切り替えボタンに表示されます</span></span>
+            <div class="slot-row" role="group" aria-labelledby="l-slot">
+              <select class="input" id="lec-day" aria-label="曜日"></select>
+              <select class="input" id="lec-period" aria-label="時限"></select>
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <div class="lec-foot">
+        <p class="save-note" id="save-note">入力した内容はこのブラウザに自動で保存されます</p>
+        <div>
+          <button type="button" class="text-btn" id="del-btn">この講義を削除</button>
+          <span class="del-confirm" id="del-confirm" hidden>
+            <span>この講義を削除しますか？</span>
+            <button type="button" class="btn small danger" id="del-yes">削除する</button>
+            <button type="button" class="btn small" id="del-no">やめる</button>
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="h-task">
+      <div class="panel-head">
+        <h2 class="step-h" id="h-task"><span class="step-n">2</span>やりたいこと</h2>
+      </div>
+      <div class="task-groups" id="task-groups"></div>
+    </section>
+  </div>
+
+  <section class="panel out" id="out-panel" aria-labelledby="h-out">
+    <div class="out-head">
+      <h2 class="step-h" id="h-out"><span class="step-n">3</span>プロンプト</h2>
+      <p class="out-task"><span id="out-icon"></span><span id="out-name"></span></p>
+    </div>
+
+    <div class="notice" id="task-notice" role="note" hidden></div>
+
+    <div class="opts" id="task-opts"></div>
+
+    <div class="sheet">
+      <div class="sheet-top">
+        <span class="sheet-title" id="sheet-title"></span>
+        <span class="sheet-date">DATE <span id="sheet-date"></span></span>
+      </div>
+      <div class="legend" id="legend">
+        <span id="lg-v"><span class="v">青字</span>：入力・設定が反映された部分</span>
+        <span id="lg-ph"><mark class="ph">【 】</mark>：自分の資料や内容に書き換える部分</span>
+      </div>
+      <p class="edit-note" id="edit-note" hidden>編集中です。書き換えた内容がそのままコピーされます。</p>
+      <div class="stale" id="stale" hidden>
+        <span>講義の情報や設定が変わりました。</span>
+        <button type="button" class="btn small" id="regen">最新の内容で作り直す</button>
+      </div>
+      <div class="sheet-body" id="prompt-view" tabindex="0" role="region" aria-label="作成されたプロンプト"></div>
+      <textarea class="sheet-body sheet-edit" id="prompt-edit" hidden aria-label="プロンプトを編集" spellcheck="false"></textarea>
+    </div>
+
+    <div class="out-actions">
+      <p class="meta"><span id="char-count">0字</span><span class="ph-count" id="ph-count" hidden></span></p>
+      <div class="btns">
+        <button type="button" class="btn" id="edit-btn" aria-pressed="false"></button>
+        <button type="button" class="btn" id="share-btn" hidden></button>
+        <button type="button" class="btn primary" id="copy-btn"></button>
+      </div>
+    </div>
+
+    <ol class="howto">
+      <li>「コピーする」を押す</li>
+      <li>ChatGPT・Claude・Gemini などのチャット欄に貼り付ける</li>
+      <li>【 】の部分を書き換えるか、資料のファイルを添付して送信する</li>
+    </ol>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <h2>使うときのヒント</h2>
+    <ul>
+      <li>資料をファイルで添付するときは、【 】の行はそのまま残して送信しても大丈夫です。</li>
+      <li>AIの回答には間違いが含まれることがあります。大事なところは講義資料や教科書で確かめましょう。</li>
+      <li>レポートや課題でのAIの使い方は、大学や講義ごとにルールが決まっていることがあります。シラバスや先生の指示を確認してから使いましょう。</li>
+      <li id="privacy-note">入力した内容はこのブラウザの中にだけ保存され、どこにも送信されません。</li>
+    </ul>
+    <p class="foot-legal">ChatGPT は OpenAI、Claude は Anthropic、Gemini は Google の商標です。このツールはこれらの会社とは関係ありません。</p>
+    <p class="foot-links" id="app-links" hidden><a href="privacy.html">プライバシーポリシー</a></p>
+  </div>
+</footer>
+
+<div class="mbar">
+  <button type="button" class="mbar-info" id="mbar-info"><span class="mbar-label">プロンプトを見る</span><span class="mbar-task" id="mbar-task"></span></button>
+  <div class="mbar-btns">
+    <button type="button" class="btn icon-only" id="mbar-share" aria-label="共有" hidden></button>
+    <button type="button" class="btn primary" id="mbar-copy"></button>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(() => {
+  'use strict';
+
+  /* ===== 講義の属性 ===== */
+  const FIELDS = {
+    stem:  { label: '理工・数学', expert: '数学・理工系科目', focus: ['定義・定理・公式とその意味', '導出や証明の流れ', '典型的な問題の解き方'], style: '数式は LaTeX 記法（例：$y = ax^2$）で書き、計算の途中式は省略しないでください。' },
+    info:  { label: '情報・プログラミング', expert: '情報科学・プログラミング', focus: ['概念やアルゴリズムのしくみ', 'コード例と処理の流れ', '計算量や使いどころ'], style: 'コードはコードブロックで示し、使っている言語名を明記してください。' },
+    med:   { label: '医療・生命', expert: '医学・生命科学', focus: ['用語の正式名称と略語', 'しくみ（機序）と因果関係', '正常な状態と異常な状態の比較'], style: '専門用語は正式名称と略語・英語表記を併記してください。' },
+    econ:  { label: '経済・経営', expert: '経済学・経営学', focus: ['理論・モデルの前提と結論', 'グラフや数式の読み方', '現実の事例との対応'], style: 'グラフが関わる内容は、縦軸・横軸が何を表し、曲線がどう動くのかを言葉でも説明してください。' },
+    law:   { label: '法律・政治', expert: '法学・政治学', focus: ['条文・制度の趣旨', '主な判例・学説と対立点', '論点ごとの結論とその理由'], style: '条文や判例は名称を正確に示し、確信が持てない場合はその旨を明記してください。' },
+    hum:   { label: '文学・歴史・哲学', expert: '人文学', focus: ['時代背景と流れ', '主要な人物・著作・概念', '論者の主張と根拠、解釈の違い'], style: '人物名・著作名・年代は正確に示し、解釈が分かれる点は複数の立場を紹介してください。' },
+    soc:   { label: '社会・教育・心理', expert: '社会科学・教育学・心理学', focus: ['主要な理論と提唱者', '研究・調査の方法と結果', '日常生活や実践への応用'], style: '理論や研究は、提唱者・研究者の名前とセットで示してください。' },
+    lang:  { label: '語学', expert: '語学教育', focus: ['文法のルールと例外', '重要な語彙・表現', '例文と使い分け'], style: '外国語の例文には必ず日本語訳を付けてください。' },
+    art:   { label: '芸術・デザイン', expert: '芸術学・デザイン', focus: ['作品・作家・様式の特徴', '表現技法とその意図', '時代背景や影響関係'], style: '作品や作家を挙げるときは、制作年代も示してください。' },
+    other: { label: 'その他', expert: '', focus: null, style: '' },
+  };
+  const FIELD_ORDER = ['stem', 'info', 'med', 'econ', 'law', 'hum', 'soc', 'lang', 'art', 'other'];
+  const GENERIC_FOCUS = ['重要な概念とその定義', '概念どうしの関係', '具体例'];
+  // 講義名から分野を推定する（上から順に判定）
+  const FIELD_RULES = [
+    ['stem', /天文/],
+    ['hum', /言語学|文学/],
+    ['lang', /英語|英会話|English|中国語|韓国語|朝鮮語|ドイツ語|フランス語|スペイン語|イタリア語|ロシア語|アラビア語|ポルトガル語|タイ語|ベトナム語|インドネシア語|TOEIC|TOEFL|外国語|語学/],
+    ['med', /医学|医療|看護|薬学|薬理|解剖|生理学|病理|生化学|免疫|臨床|公衆衛生|栄養|保健|リハビリ|歯学|獣医|疫学/],
+    ['info', /情報|プログラミング|アルゴリズム|データ構造|データサイエンス|機械学習|人工知能|AI|コンピュータ|ネットワーク|ソフトウェア|データベース|Python|Java|C言語|Web|ウェブ/],
+    ['econ', /経済|経営|会計|簿記|商学|マーケティング|ファイナンス|金融|財政|ミクロ|マクロ|ビジネス|組織論/],
+    ['law', /法学|憲法|民法|刑法|商法|会社法|行政法|国際法|労働法|訴訟法|法律|法制|政治|政策|行政学|国際関係/],
+    ['soc', /心理|教育|社会学|社会福祉|福祉|メディア|コミュニケーション|ジェンダー|人類学|地理|観光|保育|社会調査/],
+    ['art', /美術|芸術|デザイン|音楽|映像|写真|演劇|映画|アート|彫刻|絵画/],
+    ['hum', /歴史|史学|日本史|世界史|西洋史|東洋史|哲学|倫理|思想|宗教|美学|考古|古典|漢文|人文|文化論/],
+    ['stem', /数学|微分|積分|微積|線形|代数|幾何|解析|確率|統計|物理|力学|電磁気|量子|化学|有機|無機|生物|生命科学|地学|地球|工学|機械|電気|電子|材料|建築|土木|環境/],
+  ];
+
+  const YEARS = [['y1', '1年'], ['y2', '2年'], ['y3', '3年'], ['y4', '4年'], ['grad', '大学院']];
+  const YEAR_WHO = { y1: '大学1年生', y2: '大学2年生', y3: '大学3年生', y4: '大学4年生', grad: '大学院生' };
+  const LEVELS = [['low', 'ついていけてない'], ['mid', 'だいたいわかる'], ['high', '得意']];
+  const LEVEL_TEXT = { low: 'あまりついていけていない', mid: 'だいたい理解している', high: 'よく理解している（得意）' };
+  const LEVEL_LINE = {
+    low: '専門用語にはかみ砕いた説明を添え、前提知識から順を追って、初めて学ぶ人にもわかるように説明してください。',
+    mid: '大学の講義レベルを前提に、要点を押さえて説明してください。',
+    high: '基礎的な説明は簡潔にし、発展的な内容や他の分野とのつながりにも触れてください。',
+  };
+  const FORMATS = [['slide', 'スライド'], ['board', '板書'], ['text', '教科書'], ['seminar', 'ゼミ・討論'], ['lab', '実験・実習'], ['video', 'オンデマンド']];
+  const FORMAT_TEXT = { slide: 'スライド中心', board: '板書中心', text: '教科書に沿って進む', seminar: 'ゼミ・ディスカッション形式', lab: '実験・実習', video: 'オンデマンド（動画）' };
+  const FORMAT_HINT = {
+    slide: 'スライドは箇条書きで情報が断片的なので、スライド同士のつながり（なぜその話の次にこの話が来るのか）を補ってください。',
+    board: '板書やノートの写真の場合、読み取れない箇所は推測で埋めずに「［判読不能］」と示してください。',
+    text: '教科書の章・節の構成に対応させて整理してください。',
+    seminar: '議論の論点と、それぞれの立場や意見を整理してください。',
+    lab: '目的・手順・結果・考察の観点で整理し、注意点があれば明記してください。',
+    video: '動画の文字起こしなど話し言葉の資料は、重複や言い直しを除いて書き言葉で整理してください。',
+  };
+  const EVALS = [['exam', '期末試験'], ['quiz', '小テスト'], ['report', 'レポート'], ['present', '発表'], ['attend', '出席・平常点']];
+  const EVAL_TEXT = Object.fromEntries(EVALS);
+  const DAYS = ['月', '火', '水', '木', '金', '土'];
+  const PERIODS = ['1', '2', '3', '4', '5', '6', '7'];
+  const GROUPS = [['understand', '授業の理解'], ['exam', '試験対策'], ['report', 'レポート・発表']];
+  const labelOf = (list, k) => { const hit = list.find(x => x[0] === k); return hit ? hit[1] : ''; };
+
+  /* ===== アイコン ===== */
+  const ICONS = {
+    summary: '<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3.5"/>',
+    notes: '<rect x="6.5" y="3" width="13" height="18" rx="2"/><path d="M4 7.5h3M4 12h3M4 16.5h3M10.5 8h5.5M10.5 12h5.5M10.5 16h3"/>',
+    question: '<circle cx="12" cy="12" r="9"/><path d="M9.6 9.4a2.5 2.5 0 0 1 4.86.84c0 1.66-2.46 2.26-2.46 3.76"/><path d="M12 17.2h.01"/>',
+    glossary: '<path d="M6 3h12a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M4 17a2 2 0 0 1 2-2h13"/><path d="M9.5 11.5l2-5 2 5M10.2 9.8h2.6"/>',
+    sunrise: '<path d="M3 19h18"/><path d="M6.5 19a5.5 5.5 0 0 1 11 0"/><path d="M12 5v3M5.6 9.6l2.1 2.1M18.4 9.6l-2.1 2.1"/>',
+    chat: '<path d="M5.5 4h13A1.5 1.5 0 0 1 20 5.5v9a1.5 1.5 0 0 1-1.5 1.5H10l-4 3.5V16h-.5A1.5 1.5 0 0 1 4 14.5v-9A1.5 1.5 0 0 1 5.5 4z"/>',
+    calendar: '<rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4M7.5 14h2M11 14h2M14.5 14h2M7.5 17h2M11 17h2"/>',
+    target: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><path d="M12 12h.01"/>',
+    cards: '<rect x="3" y="8" width="13" height="12" rx="2"/><path d="M7 8V6a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-3"/>',
+    bolt: '<path d="M6 3h8.5L19 7.5V21H6z"/><path d="M14 3v5h5"/><path d="M12.8 10.5L10 14.5h3.5l-2.8 4"/>',
+    bulb: '<path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.7 10.7c.7.6 1.2 1.4 1.2 2.3v.5h5V16c0-.9.5-1.7 1.2-2.3A6 6 0 0 0 12 3z"/>',
+    search: '<circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.4-4.4"/>',
+    outline: '<rect x="3.5" y="3.5" width="3" height="3" rx=".5"/><path d="M9.5 5h11"/><rect x="7.5" y="10.5" width="3" height="3" rx=".5"/><path d="M13.5 12h7"/><rect x="3.5" y="17.5" width="3" height="3" rx=".5"/><path d="M9.5 19h11"/>',
+    pen: '<path d="M14.5 5.5l4 4"/><path d="M4 20l1-4.5L16.2 4.3a1.5 1.5 0 0 1 2.1 0l1.4 1.4a1.5 1.5 0 0 1 0 2.1L8.5 19z"/>',
+    book: '<path d="M12 6.5C10 5 7 4.5 3 5v13.5c4-.5 7 0 9 1.5 2-1.5 5-2 9-1.5V5c-4-.5-7 0-9 1.5z"/><path d="M12 6.5V20"/>',
+    screen: '<rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M12 16v4M8 20h8M7.5 12l3-3 2 2 4-4"/>',
+    copy: '<rect x="8.5" y="8.5" width="12" height="12" rx="2"/><path d="M15.5 8.5v-3a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h3"/>',
+    check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+    plus: '<path d="M12 5v14M5 12h14"/>',
+    edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/>',
+    undo: '<path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>',
+    draft: '<path d="M11 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h6l6 6v2"/><path d="M13 3v6h6"/><path d="M8.5 13h5M8.5 16.5h2.5"/><path d="M14.5 21l.6-2.6 4.6-4.6a1.3 1.3 0 0 1 1.9 1.9l-4.6 4.6z"/>',
+    alert: '<path d="M10.3 4.2L2.6 17.5a2 2 0 0 0 1.7 3h15.4a2 2 0 0 0 1.7-3L13.7 4.2a2 2 0 0 0-3.4 0z"/><path d="M12 9.5v4"/><path d="M12 17h.01"/>',
+    share: '<path d="M12 3.5v11"/><path d="M8 7.5l4-4 4 4"/><path d="M5.5 11.5v7a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-7"/>',
+    shareAndroid: '<circle cx="17.5" cy="5.5" r="2.5"/><circle cx="6.5" cy="12" r="2.5"/><circle cx="17.5" cy="18.5" r="2.5"/><path d="M8.7 10.7l6.6-3.9M8.7 13.3l6.6 3.9"/>',
+  };
+  const icon = name => `<svg class="i" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${ICONS[name] || ''}</svg>`;
+
+  /* ===== プロンプトを組み立てる部品 ===== */
+  // 入力・設定から作られた部分を印で囲み、プレビューで色分けする（コピー時は取り除く）
+  const V0 = '', V1 = '';
+  const v = s => (s ? V0 + s + V1 : '');
+  const strip = s => s.replace(/[]/g, '');
+  const clean = s => (typeof s === 'string' ? s.trim() : '');
+  const indent = s => s.split('\n').map(l => '  ' + l).join('\n');
+  const block = s => (s.includes('\n') ? '\n' + indent(s) : s);
+
+  function list(items, depth = 0) {
+    const pad = '  '.repeat(depth);
+    const out = [];
+    for (const it of items) {
+      if (Array.isArray(it)) {
+        const sub = list(it, depth + 1);
+        if (sub) out.push(sub);
+      } else if (it) {
+        out.push(pad + '- ' + it);
+      }
+    }
+    return out.join('\n');
+  }
+  const numbered = items => items.filter(Boolean).map((x, i) => `${i + 1}. ${x}`).join('\n');
+  const sec = (title, body) => (body ? `# ${title}\n${body}` : '');
+  const join = (...parts) => parts.filter(Boolean).join('\n\n');
+
+  const fieldOf = L => (L.field && FIELDS[L.field]) || null;
+  function role(L, skill) {
+    const f = fieldOf(L);
+    const name = clean(L.name);
+    let who = '大学教員';
+    if (f && f.expert) who = `${v(f.expert)}を専門とする大学教員`;
+    else if (name) who = `「${v(name)}」の内容にくわしい大学教員`;
+    return `あなたは${who}で、${skill}。`;
+  }
+  function context(L) {
+    const f = fieldOf(L);
+    const name = clean(L.name);
+    const desc = clean(L.desc);
+    return sec('前提', list([
+      L.year && `受講者：${v(YEAR_WHO[L.year])}`,
+      name && `講義名：${v(name)}`,
+      f && f.expert && `分野：${v(f.label)}`,
+      L.format && `講義の形式：${v(FORMAT_TEXT[L.format])}`,
+      L.evals.length > 0 && `評価方法：${v(L.evals.map(k => EVAL_TEXT[k]).join('・'))}`,
+      L.level && `いまの理解度：${v(LEVEL_TEXT[L.level])}`,
+      desc && `講義の概要・自分の状況：\n${v(indent(desc))}`,
+    ]));
+  }
+  function head(L, skill) {
+    const ctx = context(L);
+    return join(role(L, skill) + (ctx ? '\n以下の前提をふまえて、依頼に答えてください。' : ''), ctx);
+  }
+  const focus = L => { const f = fieldOf(L); return f && f.focus ? f.focus.map(v) : GENERIC_FOCUS; };
+  const styleLine = L => { const f = fieldOf(L); return f && f.style ? v(f.style) : ''; };
+  const levelLine = (L, fallback = '') => (L.level ? v(LEVEL_LINE[L.level]) : fallback);
+  const formatLine = L => (L.format ? v(FORMAT_HINT[L.format]) : '');
+  const hasExam = L => L.evals.includes('exam') || L.evals.includes('quiz');
+  const examTarget = L => (L.evals.includes('exam') ? v('期末試験') : L.evals.includes('quiz') ? v('小テスト') : '試験');
+  const starLine = L => (hasExam(L) ? v('試験に出そうな重要ポイントには ★ を付けてください。') : '');
+  const lectureRef = L => { const n = clean(L.name); return n ? `「${v(n)}」の` : 'この講義の'; };
+  const MATERIAL = '【ここに講義資料を貼り付け（PDFやスライドはファイル添付でもOK）】';
+
+  const WD = ['日', '月', '火', '水', '木', '金', '土'];
+  const startOfDay = d => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const fmtDate = d => `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日（${WD[d.getDay()]}）`;
+  function parseDate(s) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || '');
+    if (!m) return null;
+    const d = new Date(+m[1], +m[2] - 1, +m[3]);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  const daysUntil = d => Math.round((d - startOfDay(new Date())) / 864e5);
+
+  const QTYPES = { choice: '選択式', tf: '正誤（○×）', fill: '穴埋め', short: '短答（用語を答える）', essay: '論述', calc: '計算' };
+  const DEFAULT_QTYPES = { stem: ['short', 'calc'], info: ['choice', 'fill', 'short'], med: ['choice', 'tf', 'short'], econ: ['choice', 'calc', 'essay'], law: ['tf', 'short', 'essay'], lang: ['choice', 'fill'] };
+
+  // 別のタスクで入力済みの値を初期値として引き継ぐ（例：構成案づくり → 全文の作成）
+  const reuse = (...pairs) => L => {
+    for (const [taskId, key] of pairs) {
+      const x = L.opts && L.opts[taskId] && L.opts[taskId][key];
+      if (typeof x === 'string' && x.trim()) return x;
+    }
+    return '';
+  };
+
+  /* ===== やりたいこと（17種類） ===== */
+  const TASKS = [
+    {
+      id: 'summary', group: 'understand', icon: 'summary',
+      name: '講義資料の要約', desc: 'スライドやPDFの要点をまとめる',
+      options: [
+        { key: 'detail', label: '詳しさ', type: 'seg', default: 'std', choices: [['brief', 'ざっくり'], ['std', 'ふつう'], ['deep', 'くわしく']] },
+      ],
+      build(L, o) {
+        const amount = {
+          brief: '全体で400字程度に収め、要点だけを短くまとめてください。',
+          std: '重要なポイントを落とさず、全体を見渡せる分量にしてください。',
+          deep: '資料を見なくても内容を説明できるくらい、具体例や補足も含めてくわしくまとめてください。',
+        }[o.detail];
+        const out = o.detail === 'brief'
+          ? ['3行まとめ：この回の内容をひとことで', '要点：5つ以内の箇条書き', '重要用語：5つ以内（用語と短い説明）']
+          : [
+              '3行まとめ：この回の内容をひとことで',
+              o.detail === 'deep' ? '要点：見出しごとに箇条書き（具体例も含める）' : '要点：見出しごとに箇条書き',
+              '重要用語：用語と短い説明（表形式）',
+              '理解度チェック：理解を確かめる問題を3問（解答は最後にまとめる）',
+              '疑問点：資料だけではわかりにくい点や、授業で質問するとよさそうな点',
+              L.evals.includes('report') && v('レポートの種：レポートのテーマになりそうな論点'),
+            ];
+        return join(
+          head(L, '学生の復習に役立つ要約を作るのが得意です'),
+          sec('依頼', '講義資料の内容を、復習に使えるように要約してください。'),
+          sec('条件', list([
+            `詳しさ：${v(amount)}`,
+            '特に次の観点を重視してください。', focus(L),
+            formatLine(L),
+            levelLine(L),
+            styleLine(L),
+            '資料にない内容を補う場合は「（補足）」と明記し、資料の内容と区別してください。',
+            starLine(L),
+          ])),
+          sec('出力形式', numbered(out)),
+          sec('講義資料', MATERIAL),
+        );
+      },
+    },
+    {
+      id: 'notes', group: 'understand', icon: 'notes',
+      name: 'メモの整理', desc: '走り書きや文字起こしをノートに',
+      options: [
+        { key: 'source', label: '元になるもの', type: 'seg', default: 'memo', wide: true, choices: [['memo', '自分のメモ'], ['photo', 'ノート・板書の写真'], ['transcript', '講義の文字起こし']] },
+        { key: 'style', label: 'ノートの形', type: 'seg', default: 'outline', choices: [['outline', '見出し＋箇条書き'], ['cornell', 'コーネル式']] },
+      ],
+      build(L, o) {
+        const src = { memo: '講義中に取ったメモ', photo: 'ノートや板書を撮った写真', transcript: '講義の文字起こし' }[o.source];
+        const cornell = o.style === 'cornell';
+        const out = cornell
+          ? ['キーワード・問い（左の欄）とノート本文（右の欄）を対応させた表', 'まとめ（下の欄）：この回の内容を3〜5行で', '［要確認］の一覧：先生や友人に確認したほうがよい点']
+          : ['この回のテーマ（1行）', 'ノート本文：見出しと箇条書きで階層をつけて整理', 'この回のまとめ（3〜5行）', '［要確認］の一覧：先生や友人に確認したほうがよい点'];
+        const matTitle = { memo: 'メモ', photo: 'ノートの写真', transcript: '文字起こし' }[o.source];
+        const matBody = { memo: '【ここにメモを貼り付け】', photo: '【ここに写真を添付（複数枚でもOK）】', transcript: '【ここに文字起こしを貼り付け】' }[o.source];
+        return join(
+          head(L, 'ばらばらなメモを見やすいノートに整理するのが得意です'),
+          sec('依頼', `${v(src)}をもとに、あとで見返しやすい${cornell ? v('コーネル式の') : ''}ノートを作ってください。`),
+          sec('条件', list([
+            '元の内容をもとに整理し、勝手に情報を増やさないでください。補う場合は「（補足）」と明記してください。',
+            o.source === 'transcript' && v('話し言葉の言い直しや重複、雑談は省き、書き言葉で簡潔にまとめてください。'),
+            o.source === 'photo' && v('読み取れない文字は推測で埋めず、「［判読不能］」と示してください。'),
+            '意味が通らない箇所や、情報が抜けていそうな箇所には「［要確認］」と付けてください。',
+            '先生が強調していた点（「ここは大事」「試験に出す」など）があれば ★ を付けてください。',
+            '次の観点がわかるように整理してください。', focus(L),
+            styleLine(L),
+          ])),
+          sec('出力形式', numbered(out)),
+          sec(matTitle, matBody),
+        );
+      },
+    },
+    {
+      id: 'explain', group: 'understand', icon: 'question',
+      name: 'わからない所の解説', desc: 'つまずいた用語や箇所をかみ砕く',
+      options: [
+        { key: 'topic', label: 'わからないところ', type: 'textarea', rows: 2, placeholder: '例）限界効用逓減の法則と、無差別曲線が右下がりになる理由' },
+        { key: 'approach', label: '説明のしかた', type: 'seg', default: 'example', wide: true, choices: [['example', '具体例で'], ['analogy', 'たとえ話で'], ['step', '順を追って'], ['visual', '図や表で']] },
+      ],
+      build(L, o) {
+        const topic = clean(o.topic);
+        const how = {
+          example: '具体例や数値例を使って説明してください。',
+          analogy: '身近なもののたとえ話を使って、直感的にイメージできるようにしてください。',
+          step: '前提となる知識から、一歩ずつ順を追って説明してください。',
+          visual: 'テキストで表せる範囲の図や表を使って、全体の関係がひと目でわかるように説明してください。',
+        }[o.approach];
+        return join(
+          head(L, '難しい内容をかみ砕いて教えるのが得意です'),
+          sec('依頼', '講義で出てきた次の内容がよくわかりません。理解できるように解説してください。'),
+          sec('わからない内容', topic ? v(topic) : '【ここにわからない用語や箇所を書く（資料の該当部分を貼ってもOK）】'),
+          sec('条件', list([
+            '最初に「ひとことで言うと何か」を示してから、くわしく説明してください。',
+            v(how),
+            levelLine(L, '大学の講義レベルを前提に説明してください。'),
+            'この講義の中でなぜ重要なのか、ほかの内容とどうつながるのかも説明してください。',
+            styleLine(L),
+            '最後に、理解できたか確かめる確認問題を2問出してください。答えはまだ書かず、私の回答を待ってから採点と解説をしてください。',
+          ])),
+          sec('出力形式', numbered(['ひとことで言うと', 'くわしい説明', 'よくある誤解・つまずきやすい点', '講義のほかの内容とのつながり', '確認問題（2問）'])),
+        );
+      },
+    },
+    {
+      id: 'glossary', group: 'understand', icon: 'glossary',
+      name: '用語集づくり', desc: '重要な用語と意味を一覧に',
+      options: [
+        { key: 'count', label: '用語の数', type: 'seg', default: '15', choices: [['10', '10個'], ['15', '15個'], ['30', '30個']] },
+        { key: 'order', label: '並び順', type: 'seg', default: 'appear', choices: [['appear', '出てきた順'], ['importance', '重要な順'], ['kana', '五十音順']] },
+      ],
+      build(L, o) {
+        const lang = L.field === 'lang';
+        const order = { appear: '資料に出てきた順', importance: '重要度の高い順', kana: lang ? '五十音順（外国語の語句はアルファベット順）' : '五十音順' }[o.order];
+        const table = lang
+          ? v('| 語句 | 発音・読み | 意味 | 例文（日本語訳つき） |')
+          : '| 用語 | 英語表記 | 意味（1〜2文） | 具体例・関連語 |';
+        return join(
+          head(L, '専門用語をわかりやすく説明するのが得意です'),
+          sec('依頼', `講義資料から重要な${lang ? v('語句・表現') : '用語'}を抜き出して、用語集を作ってください。`),
+          sec('条件', list([
+            `数：${v(o.count + '個')}程度`,
+            `並び順：${v(order)}`,
+            '意味は、一般的な意味ではなく、この講義の文脈での意味で説明してください。一般的な意味と違う場合は、その違いも示してください。',
+            L.field === 'med' && v('正式名称・略語・英語表記を併記してください。'),
+            '資料に定義が書かれていない用語は、説明の最後に「（補足）」と明記してください。',
+            levelLine(L),
+          ])),
+          sec('出力形式', `次の列の表で出力してください。\n${table}\n表のあとに、混同しやすい${lang ? '語句' : '用語'}の組み合わせと、その違いを説明してください。`),
+          sec('講義資料', MATERIAL),
+        );
+      },
+    },
+    {
+      id: 'preview', group: 'understand', icon: 'sunrise',
+      name: '予習ガイド', desc: '次回のテーマの全体像をつかむ',
+      options: [
+        { key: 'topic', label: '次回のテーマ', type: 'text', placeholder: '例）需要の価格弾力性' },
+        { key: 'time', label: '予習にかける時間', type: 'seg', default: '30', choices: [['15', '15分'], ['30', '30分'], ['60', '1時間']] },
+      ],
+      build(L, o) {
+        const topic = clean(o.topic);
+        const time = { 15: '15分', 30: '30分', 60: '1時間' }[o.time];
+        return join(
+          head(L, '予習で押さえるべきポイントを示すのが得意です'),
+          sec('依頼', `次回の講義の予習を手伝ってください。次回のテーマは${topic ? `「${v(topic)}」` : '【次回のテーマ】'}です。`),
+          sec('条件', list([
+            `${v(time)}程度で取り組める分量にしてください。`,
+            '予習の段階なので、細かい点よりも全体像がつかめることを優先してください。',
+            'このテーマを理解するのに必要な前提知識（これまでの回や高校で習う内容など）を、先に確認してください。',
+            '講義で出てきそうな重要用語と、そのかんたんな意味を挙げてください。',
+            '講義を聞くときに意識するとよい「問い」を3つ挙げてください。',
+            levelLine(L),
+          ])),
+          sec('出力形式', numbered(['このテーマの全体像（3〜5行）', '必要な前提知識と、そのかんたんな復習', '押さえておきたい重要用語（5〜10個）', '講義中に意識したい問い（3つ）'])),
+          sec('参考資料（あれば）', '【シラバスの該当回の説明や、事前に配られた資料を貼り付け（なければこの項目ごと削除）】'),
+        );
+      },
+    },
+    {
+      id: 'free', group: 'understand', icon: 'chat',
+      name: '自由に相談', desc: '講義の前提を伝えて何でも聞く',
+      options: [
+        { key: 'q', label: '聞きたいこと', type: 'textarea', rows: 3, placeholder: '例）次の小テストまで1週間。何から復習すればいい？' },
+      ],
+      build(L, o) {
+        const q = clean(o.q);
+        return join(
+          head(L, '学生の学習相談にていねいに応じています'),
+          sec('相談したいこと', q ? v(q) : '【ここに質問や相談したいことを書く】'),
+          sec('条件', list([
+            levelLine(L),
+            styleLine(L),
+            '情報が足りない場合は、推測で答えずに私に質問してください。',
+          ])),
+        );
+      },
+    },
+    {
+      id: 'plan', group: 'exam', icon: 'calendar',
+      name: '学習計画', desc: '試験日から逆算して計画を立てる',
+      options: [
+        { key: 'date', label: '試験日', type: 'date' },
+        { key: 'hours', label: '1日に使える時間', type: 'seg', default: '60', choices: [['30', '30分'], ['60', '1時間'], ['120', '2時間'], ['180', '3時間以上']] },
+        { key: 'range', label: '試験範囲', type: 'text', wide: true, placeholder: '例）第1回〜第7回、教科書1〜4章' },
+      ],
+      build(L, o) {
+        const today = startOfDay(new Date());
+        const exam = parseDate(o.date);
+        const days = exam ? daysUntil(exam) : null;
+        const examText = exam ? v(fmtDate(exam) + (days > 0 ? `（あと${days}日）` : days === 0 ? '（今日）' : '')) : '【試験日】';
+        const hours = { 30: '30分', 60: '1時間', 120: '2時間', 180: '3時間以上' }[o.hours];
+        const range = clean(o.range);
+        const long = days !== null && days > 21;
+        return join(
+          head(L, '学生の学習計画づくりを数多く支援してきました'),
+          sec('依頼', `${lectureRef(L)}${examTarget(L)}に向けて、学習計画を立ててください。`),
+          sec('条件', list([
+            `今日：${fmtDate(today)}`,
+            `試験日：${examText}`,
+            `1日に使える時間：${v(hours)}`,
+            `試験範囲：${range ? v(range) : '【試験範囲（第◯回〜第◯回、教科書の◯章など）】'}`,
+            '「理解 → 演習 → 復習」のサイクルが回るように組み立ててください。',
+            '試験の前日と直前は、総復習と苦手の確認にあててください。',
+            '予定どおり進まなかったときのための予備日を入れてください。',
+            long && v('期間が長いので、週ごとの目標と、直前1週間の日ごとの計画に分けてください。'),
+            L.level === 'low' && v('基礎の理解に多めに時間を配分してください。'),
+            '他の科目の勉強もあるので、無理なく続けられる計画にしてください。',
+          ])),
+          sec('出力形式', numbered([
+            '計画の方針（2〜3行）',
+            long ? v('計画表（週ごとの目標と、直前1週間の日ごとの予定。日付 / やること / 目安時間 / チェック欄）') : '日ごとの計画表（日付 / やること / 目安時間 / チェック欄）',
+            'この科目で点を取るためのコツ（3つ）',
+          ])),
+        );
+      },
+    },
+    {
+      id: 'quiz', group: 'exam', icon: 'target',
+      name: '想定問題', desc: '出そうな問題を解説つきで',
+      options: [
+        { key: 'types', label: '問題の形式', type: 'multi', min: 1, wide: true, choices: [['choice', '選択式'], ['tf', '○×'], ['fill', '穴埋め'], ['short', '短答'], ['essay', '論述'], ['calc', '計算']], defaultFn: L => (DEFAULT_QTYPES[L.field] || ['choice', 'short', 'essay']).slice() },
+        { key: 'count', label: '問題数', type: 'seg', default: '10', choices: [['5', '5問'], ['10', '10問'], ['20', '20問']] },
+        { key: 'level', label: '難易度', type: 'seg', default: 'std', choices: [['basic', '基礎'], ['std', '標準'], ['adv', '応用']] },
+        { key: 'mode', label: '出題のしかた', type: 'seg', default: 'all', choices: [['all', 'まとめて出題'], ['one', '1問ずつ対話で']] },
+        { key: 'past', label: '過去問の傾向に合わせる', type: 'toggle', default: false, hint: '過去問を貼り付ける欄が加わります' },
+      ],
+      build(L, o) {
+        const level = { basic: '基礎（用語の意味や基本事項の確認が中心）', std: '標準（実際の大学の試験と同じくらい）', adv: '応用（複数の内容を組み合わせて考える問題を含む）' }[o.level];
+        const one = o.mode === 'one';
+        return join(
+          head(L, '試験問題の作成に慣れています'),
+          sec('依頼', `講義資料の内容をもとに、${examTarget(L)}対策の想定問題を作ってください。`),
+          sec('条件', list([
+            `問題数：${v(o.count + '問')}`,
+            `問題の形式：${v(o.types.map(k => QTYPES[k]).join('、'))}`,
+            `難易度：${v(level)}`,
+            '資料の重要なポイントを広くカバーし、同じ内容の問題が重ならないようにしてください。',
+            '各問題に、正解と「なぜその答えになるのか」の解説を付けてください。',
+            o.types.includes('calc') && v('計算問題は、途中式を省略せずに解答例を示してください。'),
+            o.types.includes('essay') && v('論述問題には、採点のポイント（含めるべき要素）と模範解答を示してください。'),
+            L.field === 'law' && v('具体的な事例に条文や判例を当てはめて考える事例問題を含めてください。'),
+            styleLine(L),
+            o.past && v('下に貼り付けた過去問の出題形式・傾向・難易度に合わせてください。'),
+            one
+              ? v('1問ずつ出題し、私の回答を待ってから採点と解説をして、次の問題に進んでください。全問終わったら、正答率と復習すべきポイントを教えてください。')
+              : v('先にすべての問題を出し、そのあとに解答と解説をまとめて示してください。'),
+          ])),
+          sec('出力形式', one ? 'まずは第1問だけを出題してください。' : '## 問題\n（番号を付け、形式ごとにまとめる）\n\n## 解答と解説\n（問題番号に対応させる）'),
+          sec('講義資料', MATERIAL),
+          o.past && sec('過去問（参考）', '【ここに過去問を貼り付け（写真の添付でもOK）】'),
+        );
+      },
+    },
+    {
+      id: 'cards', group: 'exam', icon: 'cards',
+      name: '暗記カード', desc: '一問一答をAnki・Quizlet用にも',
+      options: [
+        { key: 'count', label: '枚数', type: 'seg', default: '20', choices: [['10', '10枚'], ['20', '20枚'], ['40', '40枚']] },
+        { key: 'format', label: '出力の形', type: 'seg', default: 'table', choices: [['table', '表'], ['tsv', 'Anki・Quizlet用']] },
+      ],
+      build(L, o) {
+        return join(
+          head(L, '暗記しやすい一問一答を作るのが得意です'),
+          sec('依頼', '講義資料の内容から、一問一答形式の暗記カードを作ってください。'),
+          sec('条件', list([
+            `枚数：${v(o.count + '枚')}程度`,
+            '表（問題）は短く、答えが一つに決まる問いにしてください。',
+            '裏（答え）は簡潔にし、必要なら一言だけ補足を付けてください。',
+            '試験で問われやすい重要事項を優先してください。',
+            L.field === 'lang' && v('語彙のカードは、表に外国語、裏に意味と短い例文（日本語訳つき）を書いてください。'),
+            L.field === 'stem' && v('公式のカードは、表に「何を求める公式か」、裏に公式と各記号の意味を書いてください。'),
+            '資料に書かれている内容だけを使ってください。',
+          ])),
+          sec('出力形式', o.format === 'tsv'
+            ? v('Anki や Quizlet に読み込めるように、コードブロックの中に「問題」と「答え」をタブで区切って、1行に1枚ずつ出力してください。見出し行や番号、説明文は入れないでください。')
+            : '「No. / 表（問題） / 裏（答え）」の3列の表で出力してください。'),
+          sec('講義資料', MATERIAL),
+        );
+      },
+    },
+    {
+      id: 'cram', group: 'exam', icon: 'bolt',
+      name: '直前まとめシート', desc: '試験前に見返す1枚にまとめる',
+      options: [
+        { key: 'range', label: '試験範囲', type: 'text', placeholder: '例）第1回〜第7回' },
+        { key: 'carry', label: '持ち込み', type: 'seg', default: 'none', choices: [['none', '持ち込み不可'], ['a4', 'A4用紙1枚まで'], ['any', '資料持ち込み可']] },
+      ],
+      build(L, o) {
+        const range = clean(o.range);
+        const carry = {
+          none: '持ち込みはできないので、試験直前の10分で見返せる分量に絞ってください。',
+          a4: 'A4用紙1枚の持ち込みが認められているので、A4の両面に収まる密度でまとめてください。',
+          any: '資料の持ち込みが認められているので、試験中にすぐ引けるよう、項目ごとに整理してください。',
+        }[o.carry];
+        return join(
+          head(L, '試験対策の指導に慣れています'),
+          sec('依頼', `${examTarget(L)}の直前に見返すための「まとめシート」を作ってください。`),
+          sec('条件', list([
+            `試験範囲：${range ? v(range) : '【試験範囲（第◯回〜第◯回など）】'}`,
+            v(carry),
+            '重要度の高い順に並べ、特に重要な項目には ★ を付けてください。',
+            '定義・公式・キーワードなど、そのまま覚えるべきものを優先してください。',
+            'まぎらわしい用語や、よくある間違いがあれば「注意」としてまとめてください。',
+            '次の観点を押さえてください。', focus(L),
+            styleLine(L),
+            '資料にない内容を補う場合は「（補足）」と明記してください。',
+          ])),
+          sec('出力形式', numbered(['テーマ別のまとめ（見出しと箇条書き）', 'そのまま覚えるべき定義・公式・キーワード', '注意：まぎらわしい点・よくある間違い', '最後に確認したい問い（5つ）'])),
+          sec('講義資料', '【ここに講義資料やノートを貼り付け（複数回分をまとめてもOK）】'),
+        );
+      },
+    },
+    {
+      id: 'theme', group: 'report', icon: 'bulb',
+      name: 'テーマ出し', desc: '課題文から書ける切り口を探す',
+      options: [
+        { key: 'assignment', label: '課題文', type: 'textarea', rows: 3, placeholder: '例）講義で扱った「市場の失敗」の事例を1つ取り上げ、政府がとるべき対応を論じなさい。' },
+        { key: 'length', label: '文字数', type: 'text', placeholder: '例）2000字' },
+      ],
+      build(L, o) {
+        const a = clean(o.assignment);
+        const len = clean(o.length);
+        return join(
+          head(L, 'レポート指導の経験が豊富です'),
+          sec('依頼', `${lectureRef(L)}レポート課題に取り組んでいます。テーマ決めを手伝ってください。`),
+          sec('課題文', a ? v(a) : '【ここにレポートの課題文を貼り付け】'),
+          sec('条件', list([
+            len && `指定の文字数：${v(len)}`,
+            '講義の内容をふまえて、私が取り組めそうなテーマ案を5つ提案してください。',
+            '各テーマ案について、次の4点を示してください。',
+            ['問い（このレポートで明らかにしたいこと）', '主張の方向性', '使えそうな講義の内容（理論・概念・事例）', '調べる必要があること'],
+            len ? '広すぎず、指定の文字数で論じきれる範囲に絞ってください。' : '広すぎず、大学のレポートで論じきれる範囲に絞ってください。',
+            '最後に、私に合ったテーマを選ぶための質問を3つしてください。',
+          ])),
+          sec('出力形式', 'テーマ案ごとに見出しを付け、上の4点を箇条書きで示してください。'),
+        );
+      },
+    },
+    {
+      id: 'search', group: 'report', icon: 'search',
+      name: '文献さがし', desc: '調べるキーワードと探し方を知る',
+      options: [
+        { key: 'theme', label: '調べたいテーマ', type: 'text', placeholder: '例）炭素税が家計に与える影響' },
+        { key: 'kinds', label: '探したい資料', type: 'multi', wide: true, default: ['paper', 'book'], choices: [['paper', '論文'], ['book', '本'], ['stats', '統計データ'], ['news', '新聞・ニュース'], ['gov', '公的機関の資料']] },
+      ],
+      build(L, o) {
+        const theme = clean(o.theme);
+        const KINDS = { paper: '学術論文', book: '書籍', stats: '統計データ', news: '新聞・ニュース記事', gov: '政府・公的機関の資料' };
+        return join(
+          head(L, '大学図書館での文献調査の指導に慣れています'),
+          sec('依頼', `レポートのための文献調査を手伝ってください。調べたいテーマは${theme ? `「${v(theme)}」` : '【調べたいテーマ】'}です。`),
+          sec('条件', list([
+            o.kinds.length > 0 && `探したい資料：${v(o.kinds.map(k => KINDS[k]).join('、'))}`,
+            '検索に使えるキーワードを、日本語と英語の両方で挙げてください。同義語・関連語や、絞り込みに使える組み合わせも示してください。',
+            '資料の種類ごとに、どこで探すとよいか（CiNii Research、J-STAGE、Google Scholar、国立国会図書館サーチ、大学図書館の蔵書検索など）と、探し方のコツを教えてください。',
+            o.kinds.includes('stats') && v('統計データについては、どの機関がどのような統計を公表しているかを示してください（e-Stat など）。'),
+            '具体的な文献名を挙げる場合は、確実に実在するものだけにしてください。私が実在を確かめられるよう、著者・タイトル・出版年を添えてください。',
+            '見つけた文献が信頼できるかを確かめるポイントも教えてください。',
+          ])),
+          sec('出力形式', numbered(['検索キーワード（日本語・英語、組み合わせの例）', '資料の種類ごとの探し先と探し方', '文献の信頼性を確かめるポイント', '文献が見つからないときの工夫'])),
+        );
+      },
+    },
+    {
+      id: 'outline', group: 'report', icon: 'outline',
+      name: '構成案づくり', desc: '序論・本論・結論の骨組みをつくる',
+      options: [
+        { key: 'theme', label: 'テーマ・課題文', type: 'textarea', rows: 2, placeholder: '例）炭素税は温暖化対策として有効か' },
+        { key: 'length', label: '文字数', type: 'text', placeholder: '例）2000字' },
+        { key: 'kind', label: 'レポートの種類', type: 'seg', default: 'argue', wide: true, choices: [['argue', '論証型'], ['survey', '調査報告型'], ['reflect', '考察・感想型'], ['lab', '実験レポート']] },
+        { key: 'opinion', label: '自分の考え（メモでOK）', type: 'textarea', rows: 2, placeholder: '例）有効だと思うが、低所得の家庭ほど負担が重くなる点が気になる' },
+      ],
+      build(L, o) {
+        const theme = clean(o.theme);
+        const len = clean(o.length);
+        const op = clean(o.opinion);
+        const lab = o.kind === 'lab';
+        const kind = { argue: '論証型（主張を根拠とともに論じる）', survey: '調査報告型（調べた内容を整理して報告する）', reflect: '考察・感想型（講義や文献をふまえて自分の考えを述べる）', lab: '実験レポート' }[o.kind];
+        return join(
+          head(L, 'レポート指導の経験が豊富です'),
+          sec('依頼', 'レポートの構成案（アウトライン）を作ってください。本文は自分で書くので、構成と、各段落で書くべき内容を示してください。'),
+          sec('レポートの情報', list([
+            `テーマ・課題文：${theme ? v(block(theme)) : '【レポートのテーマや課題文】'}`,
+            len && `指定の文字数：${v(len)}`,
+            `種類：${v(kind)}`,
+            `自分の考え：${op ? v(block(op)) : '【自分の考えをメモ程度で（まだなければこの行ごと削除）】'}`,
+          ])),
+          sec('条件', list([
+            lab ? v('目的・原理・方法・結果・考察・結論の構成にし、各パートで書くべき内容と目安の分量を示してください。') : '序論・本論・結論の構成にし、各パートの目安の文字数を示してください。',
+            '各段落について「その段落で言いたいこと（1文）」と「根拠・具体例として使えるもの」を示してください。',
+            o.kind === 'argue' && v('予想される反論と、それに対する応答をどこに入れるかも示してください。'),
+            lab && v('考察で触れるべき観点（誤差の原因、理論値や先行研究との比較など）を挙げてください。'),
+            '講義で扱った理論や概念を、どこで使うと効果的かも示してください。',
+            '引用や参考文献が必要な箇所には「［要出典］」と示し、探すべき文献のキーワードを挙げてください。実在を確認できない文献名は挙げないでください。',
+          ])),
+          sec('出力形式', numbered(['タイトル案（3つ）', '構成表（パート / 目安の文字数 / 内容 / 根拠・具体例）', '探すべき文献のキーワード', '書き始める前に考えておくとよい点'])),
+        );
+      },
+    },
+    {
+      id: 'fulltext', group: 'report', icon: 'draft',
+      name: '全文の作成', desc: '構成やメモから本文を書いてもらう', tag: '要注意',
+      notice: {
+        title: '使う前に必ず確認してください',
+        items: [
+          'AIが書いた文章を、許可なくそのまま自分の文章として提出すると、不正行為（剽窃・代筆）とみなされ、単位の取り消しなどの処分を受けることがあります。',
+          'シラバスや先生の指示で、AIの利用が認められているかを確認してください。認められている場合も、AIを使ったことの明記を求められることがあります。',
+          'AIの文章には、事実の誤りや実在しない文献が含まれることがあります。内容と出典は必ず自分で確かめてください。',
+          'できた文章は下書きとして扱い、自分の考えと言葉で書き直してから提出しましょう。',
+        ],
+      },
+      copyToast: 'コピーしました。AIの文章は下書きとして扱い、提出前に必ず確認して書き直してください',
+      options: [
+        { key: 'theme', label: 'テーマ・課題文', type: 'textarea', rows: 2, placeholder: '例）炭素税は温暖化対策として有効か', defaultFn: reuse(['outline', 'theme'], ['theme', 'assignment']) },
+        { key: 'length', label: '文字数', type: 'text', placeholder: '例）2000字', defaultFn: reuse(['outline', 'length'], ['theme', 'length']) },
+        { key: 'tone', label: '文体', type: 'seg', default: 'dearu', choices: [['dearu', 'である調'], ['desu', 'です・ます調']] },
+        { key: 'opinion', label: '自分の考え（メモでOK）', type: 'textarea', rows: 2, placeholder: '例）有効だと思うが、低所得の家庭ほど負担が重くなる点が気になる', defaultFn: reuse(['outline', 'opinion']) },
+        { key: 'memo', label: '構成案・メモ（あれば）', type: 'textarea', rows: 2, placeholder: '「構成案づくり」でAIが出した構成や、書きたい内容のメモを貼り付け' },
+        { key: 'disclose', label: 'AIを使ったことを明記する文例も出してもらう', type: 'toggle', default: true, hint: '提出時にAIの利用を書くよう求められている場合に使えます' },
+      ],
+      build(L, o) {
+        const theme = clean(o.theme);
+        const len = clean(o.length);
+        const op = clean(o.opinion);
+        const memo = clean(o.memo);
+        const tone = { dearu: 'である調（常体）', desu: 'です・ます調（敬体）' }[o.tone];
+        return join(
+          head(L, 'レポートの書き方の指導に慣れています'),
+          sec('依頼', 'これから示す情報をもとに、レポートの本文を書いてください。この文章は、私が内容を確かめたうえで、自分の言葉で書き直すための下書きとして使います。'),
+          sec('レポートの情報', list([
+            `テーマ・課題文：${theme ? v(block(theme)) : '【レポートのテーマや課題文】'}`,
+            len && `指定の文字数：${v(len)}`,
+            `文体：${v(tone)}`,
+            `自分の考え：${op ? v(block(op)) : '【自分の考えをメモ程度で（まだなければこの行ごと削除）】'}`,
+          ])),
+          sec('構成案・メモ', memo ? v(memo) : '【構成案や書きたい内容のメモを貼り付け（なければこの項目ごと削除）】'),
+          sec('条件', list([
+            '序論・本論・結論の構成で書いてください。構成案・メモがある場合は、その流れに沿ってください。',
+            len && '指定の文字数に合わせてください。',
+            op ? v('私の考えを文章の軸にし、結論を勝手に変えないでください。') : '「自分の考え」を書いた場合はそれを文章の軸にし、なければ主張を一つに絞って論じてください。',
+            '講義で扱った理論や概念を使って論じてください。',
+            '大学のレポートにふさわしい書き言葉で書き、話し言葉や感想だけの表現は避けてください。',
+            '事実・数値・データは創作しないでください。手元にない情報が必要な箇所は「［データ：必要な情報］」のように空欄にしてください。',
+            '引用や出典が必要な箇所には「［要出典：探すべき情報］」と示してください。実在を確認できない文献名・著者名・URLは書かないでください。',
+            '私自身の経験や具体例を入れるとよい箇所には「［自分の具体例］」と示してください。',
+          ])),
+          sec('出力形式', numbered([
+            'タイトル',
+            '本文（章ごとに見出しを付ける）',
+            '提出前に私が確認・修正すべき点（事実や数値の確認、出典を探す箇所、自分の言葉で書き直すとよい箇所）',
+            o.disclose && v('AIを使ったことをレポートに明記するための文例（2〜3文）'),
+          ])),
+        );
+      },
+    },
+    {
+      id: 'review', group: 'report', icon: 'pen',
+      name: '下書きの添削', desc: '書いた文章の改善点を指摘',
+      options: [
+        { key: 'focus', label: '特に見てほしい点', type: 'multi', wide: true, default: ['logic', 'style'], choices: [['logic', '論理の流れ'], ['evidence', '根拠の強さ'], ['style', '文章表現'], ['typo', '誤字脱字'], ['content', '内容の正確さ'], ['cite', '引用の書き方']] },
+        { key: 'assignment', label: '課題文（あれば）', type: 'textarea', rows: 2, placeholder: '貼り付けると、課題の問いに答えているかも確認してもらえます' },
+        { key: 'length', label: '文字数', type: 'text', placeholder: '例）2000字' },
+      ],
+      build(L, o) {
+        const FOCUS = { logic: '論理の流れと主張の一貫性', evidence: '根拠の十分さ', style: '文章表現と読みやすさ', typo: '誤字脱字・表記ゆれ', content: '講義内容の理解の正確さ', cite: '引用・参考文献の書き方' };
+        const a = clean(o.assignment);
+        const len = clean(o.length);
+        return join(
+          head(L, 'レポートの添削指導の経験が豊富です'),
+          sec('依頼', '私が書いたレポートの下書きを添削してください。全文を書き直すのではなく、改善点を具体的に指摘してください。'),
+          sec('条件', list([
+            a && `課題文：${v(block(a))}`,
+            a && '課題の問いにきちんと答えているかも確認してください。',
+            len && `指定の文字数：${v(len)}`,
+            `特に見てほしい点：${o.focus.length ? v(o.focus.map(k => FOCUS[k]).join('、')) : '全体'}`,
+            'まず良い点を挙げ、そのあと改善点を重要度の高い順に示してください。',
+            '改善点ごとに「該当箇所（引用）」「問題点」「改善の方向性」を示してください。修正例を示す場合は1文程度にとどめてください。',
+            '講義の内容や事実として誤っている可能性がある箇所があれば指摘してください。',
+            '話し言葉や主観的すぎる表現など、大学のレポートにふさわしくない表現があれば指摘してください。',
+          ])),
+          sec('出力形式', numbered(['全体の評価（5段階評価とひとことコメント）', '良い点', '改善点（重要度 / 該当箇所 / 問題点 / 改善の方向性 の表）', '次に取り組むべきこと（3つ）'])),
+          sec('下書き', '【ここにレポートの下書きを貼り付け】'),
+        );
+      },
+    },
+    {
+      id: 'reading', group: 'report', icon: 'book',
+      name: '文献の読解', desc: '論文やゼミの文献を整理する',
+      options: [
+        { key: 'purpose', label: '読む目的', type: 'seg', default: 'understand', wide: true, choices: [['understand', '内容を理解したい'], ['seminar', 'ゼミで発表・議論する'], ['report', 'レポートに使う']] },
+      ],
+      build(L, o) {
+        const last = { understand: '理解を深めるために次に調べるとよいこと（キーワード）', seminar: '議論のための問い（3つ）', report: 'レポートで使えるポイント' }[o.purpose];
+        return join(
+          head(L, '文献の読み方を指導するのが得意です'),
+          sec('依頼', '講義やゼミで読む文献・論文の読解を手伝ってください。'),
+          sec('条件', list([
+            '次の観点で整理してください。',
+            ['著者の問い（何を明らかにしようとしているか）', '主張（結論）', '根拠・方法（どのように示しているか）', '講義の内容との関係', '批判的に検討できる点（限界や疑問点）'],
+            '文献に書かれていることと、あなたの解釈・補足をはっきり区別してください。',
+            '難しい専門用語には、かんたんな説明を付けてください。',
+            o.purpose === 'seminar' && v('ゼミで議論が起こるような「問い」を3つ提案してください。'),
+            o.purpose === 'report' && v('レポートで引用・参照できそうな箇所と、その使い方を示してください。引用する場合は原文の該当箇所を示してください。'),
+            levelLine(L),
+          ])),
+          sec('出力形式', numbered(['3行要約', '観点ごとの整理', '重要な用語', v(last)])),
+          sec('文献', '【ここに文献・論文を貼り付け（PDFはファイル添付でもOK）】'),
+        );
+      },
+    },
+    {
+      id: 'present', group: 'report', icon: 'screen',
+      name: '発表の準備', desc: 'スライド構成と想定質問をつくる',
+      options: [
+        { key: 'theme', label: '発表テーマ', type: 'text', placeholder: '例）コンビニ業界の価格競争と寡占' },
+        { key: 'minutes', label: '発表時間', type: 'seg', default: '10', choices: [['5', '5分'], ['10', '10分'], ['15', '15分'], ['20', '20分']] },
+      ],
+      build(L, o) {
+        const theme = clean(o.theme);
+        return join(
+          head(L, '学生の発表指導の経験が豊富です'),
+          sec('依頼', '講義での発表（プレゼン）の準備を手伝ってください。'),
+          sec('発表の情報', list([
+            `テーマ：${theme ? v(theme) : '【発表テーマ】'}`,
+            `発表時間：${v(o.minutes + '分')}`,
+            '聞き手：同じ講義の受講生と先生',
+          ])),
+          sec('条件', list([
+            'スライド1枚につき1分程度を目安に、スライド構成案を作ってください。',
+            '各スライドについて「タイトル」「伝えたいこと（1文）」「載せる内容（箇条書き）」「話す内容のメモ」を示してください。',
+            '最初の1分で聞き手の興味を引く導入を考えてください。',
+            '講義で扱った理論や概念と結びつけてください。',
+            '発表後に出そうな質問を5つと、答え方のポイントを挙げてください。',
+          ])),
+          sec('出力形式', numbered(['発表全体のストーリー（3〜5行）', 'スライド構成表', '想定質問と答え方のポイント'])),
+          sec('発表の材料', '【調べた内容やメモを貼り付け（なければこの項目ごと削除）】'),
+        );
+      },
+    },
+  ];
+  const TASK_MAP = Object.fromEntries(TASKS.map(t => [t.id, t]));
+
+  /* ===== 状態と保存 ===== */
+  const STORE_KEY = 'kougi-prompt-maker:v1';
+  const state = { lectures: [], activeId: '', taskId: 'summary', moreOpen: false, editing: false, editBase: '', generated: '' };
+
+  const uid = () => Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-4);
+  function blankLecture() {
+    return { id: uid(), name: '', desc: '', field: null, fieldManual: false, year: null, level: null, format: null, evals: [], day: '', period: '', opts: {}, sample: false };
+  }
+  function sampleLecture() {
+    return Object.assign(blankLecture(), {
+      name: 'ミクロ経済学Ⅰ',
+      desc: '消費者と企業の行動を、グラフと数式を使って分析する講義。毎回スライドのPDFが配られる。無差別曲線や予算制約線のグラフの読み取りが苦手。',
+      field: 'econ', year: 'y2', level: 'low', format: 'slide', evals: ['exam', 'report'], day: '月', period: '2', sample: true,
+    });
+  }
+  function normalizeLecture(x) {
+    const L = blankLecture();
+    if (!x || typeof x !== 'object') return L;
+    if (typeof x.id === 'string' && x.id) L.id = x.id;
+    if (typeof x.name === 'string') L.name = x.name;
+    if (typeof x.desc === 'string') L.desc = x.desc;
+    if (FIELDS[x.field]) L.field = x.field;
+    L.fieldManual = !!x.fieldManual;
+    if (YEAR_WHO[x.year]) L.year = x.year;
+    if (LEVEL_TEXT[x.level]) L.level = x.level;
+    if (FORMAT_TEXT[x.format]) L.format = x.format;
+    if (Array.isArray(x.evals)) L.evals = EVALS.map(e => e[0]).filter(k => x.evals.includes(k));
+    if (DAYS.includes(x.day)) L.day = x.day;
+    if (PERIODS.includes(String(x.period))) L.period = String(x.period);
+    if (x.opts && typeof x.opts === 'object' && !Array.isArray(x.opts)) L.opts = x.opts;
+    L.sample = !!x.sample;
+    return L;
+  }
+  function storageWorks() {
+    try {
+      const k = STORE_KEY + ':test';
+      localStorage.setItem(k, '1');
+      localStorage.removeItem(k);
+      return true;
+    } catch (e) { return false; }
+  }
+  // アプリ（iOS / Android）で動くときはネイティブ機能を使う。Web には window.Capacitor が無いので従来どおり動く
+  const Cap = window.Capacitor;
+  const isNative = !!(Cap && typeof Cap.isNativePlatform === 'function' && typeof Cap.registerPlugin === 'function' && Cap.isNativePlatform());
+  function nativePlugin(name) {
+    if (!isNative) return null;
+    try { return Cap.isPluginAvailable(name) ? Cap.registerPlugin(name) : null; } catch (e) { return null; }
+  }
+  const Native = {
+    Preferences: nativePlugin('Preferences'),
+    Clipboard: nativePlugin('Clipboard'),
+    Share: nativePlugin('Share'),
+    Haptics: nativePlugin('Haptics'),
+  };
+  const haptic = () => { if (Native.Haptics) Native.Haptics.impact({ style: 'LIGHT' }).catch(() => {}); };
+
+  // 保存先：アプリでは端末の保存領域（Preferences）、Web ではブラウザ（localStorage）
+  async function load() {
+    let raw = null;
+    if (Native.Preferences) {
+      try { raw = (await Native.Preferences.get({ key: STORE_KEY })).value; } catch (e) { raw = null; }
+    }
+    if (typeof raw !== 'string') {
+      try { raw = localStorage.getItem(STORE_KEY); } catch (e) { raw = null; }
+    }
+    try {
+      const data = raw ? JSON.parse(raw) : null;
+      return data && Array.isArray(data.lectures) && data.lectures.length ? data : null;
+    } catch (e) { return null; }
+  }
+  let saveTimer = 0;
+  function saveNow() {
+    clearTimeout(saveTimer);
+    const value = JSON.stringify({ v: 1, lectures: state.lectures, activeId: state.activeId, taskId: state.taskId, moreOpen: state.moreOpen });
+    if (Native.Preferences) Native.Preferences.set({ key: STORE_KEY, value }).catch(() => {});
+    try { localStorage.setItem(STORE_KEY, value); } catch (e) { /* 保存できない環境では何もしない */ }
+  }
+  const persist = () => { clearTimeout(saveTimer); saveTimer = setTimeout(saveNow, 300); };
+
+  const active = () => state.lectures.find(l => l.id === state.activeId) || state.lectures[0];
+  const currentTask = () => TASK_MAP[state.taskId] || TASKS[0];
+
+  function defaultOpt(def, L) {
+    if (def.defaultFn) return def.defaultFn(L);
+    if (def.default !== undefined) return Array.isArray(def.default) ? def.default.slice() : def.default;
+    return def.type === 'multi' ? [] : def.type === 'toggle' ? false : '';
+  }
+  // 保存値を検証しながら、そのタスクの設定値をそろえる
+  function optsFor(L, task) {
+    const saved = (L.opts && typeof L.opts[task.id] === 'object' && L.opts[task.id]) || {};
+    const o = {};
+    for (const def of task.options) {
+      const raw = saved[def.key];
+      const keys = def.choices ? def.choices.map(c => c[0]) : null;
+      let val;
+      if (def.type === 'seg') {
+        val = keys.includes(raw) ? raw : defaultOpt(def, L);
+      } else if (def.type === 'multi') {
+        val = Array.isArray(raw) ? keys.filter(k => raw.includes(k)) : defaultOpt(def, L);
+        if (def.min && val.length < def.min) val = defaultOpt(def, L);
+      } else if (def.type === 'toggle') {
+        val = typeof raw === 'boolean' ? raw : defaultOpt(def, L);
+      } else {
+        val = typeof raw === 'string' ? raw : defaultOpt(def, L);
+      }
+      o[def.key] = val;
+    }
+    return o;
+  }
+  function setOpt(L, task, key, val) {
+    if (!L.opts[task.id] || typeof L.opts[task.id] !== 'object') L.opts[task.id] = {};
+    L.opts[task.id][key] = val;
+  }
+  function detectField(name) {
+    const s = clean(name);
+    if (!s) return null;
+    for (const [k, re] of FIELD_RULES) if (re.test(s)) return k;
+    return null;
+  }
+
+  /* ===== 描画 ===== */
+  const $ = id => document.getElementById(id);
+  const els = {
+    tabs: $('lec-tabs'), sample: $('sample-note'), clearSample: $('clear-sample'),
+    name: $('lec-name'), desc: $('lec-desc'), fields: $('field-chips'),
+    more: $('lec-more'), moreVals: $('more-vals'),
+    years: $('year-chips'), levels: $('level-chips'), formats: $('format-chips'), evals: $('eval-chips'),
+    day: $('lec-day'), period: $('lec-period'),
+    saveNote: $('save-note'), delBtn: $('del-btn'), delConfirm: $('del-confirm'), delYes: $('del-yes'), delNo: $('del-no'),
+    tasks: $('task-groups'), outIcon: $('out-icon'), outName: $('out-name'), notice: $('task-notice'), opts: $('task-opts'),
+    sheetTitle: $('sheet-title'), sheetDate: $('sheet-date'), legend: $('legend'), lgV: $('lg-v'), lgPh: $('lg-ph'),
+    editNote: $('edit-note'), stale: $('stale'), regen: $('regen'), view: $('prompt-view'), edit: $('prompt-edit'),
+    chars: $('char-count'), phCount: $('ph-count'), editBtn: $('edit-btn'), shareBtn: $('share-btn'), copyBtn: $('copy-btn'),
+    outPanel: $('out-panel'), mbarInfo: $('mbar-info'), mbarTask: $('mbar-task'), mbarShare: $('mbar-share'), mbarCopy: $('mbar-copy'), toast: $('toast'),
+  };
+
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const PH_MARKED = /【[^】\n]*】/g;
+  const PH_PLAIN = /【[^】\n]*】/g;
+  function toHTML(raw) {
+    let s = esc(raw).replace(PH_MARKED, m => `<mark class="ph">${m}</mark>`);
+    s = s.split('\n').map(line => (/^#{1,3} /.test(line) && !/[]/.test(line) ? `<span class="h">${line}</span>` : line)).join('\n');
+    return s.replace(//g, '<span class="v">').replace(//g, '</span>');
+  }
+
+  function slotLabel(L) { return L.day ? L.day + L.period : (L.period ? L.period + '限' : ''); }
+  function slotKey(L) { return (L.day ? DAYS.indexOf(L.day) : 9) * 10 + (L.period ? +L.period : 9); }
+
+  function renderTabs() {
+    const hadFocus = els.tabs.contains(document.activeElement);
+    const ordered = state.lectures.map((L, i) => ({ L, i })).sort((a, b) => slotKey(a.L) - slotKey(b.L) || a.i - b.i);
+    els.tabs.innerHTML = ordered.map(({ L }) => {
+      const s = slotLabel(L);
+      return `<button type="button" class="lec${s ? '' : ' no-slot'}" data-id="${esc(L.id)}" aria-pressed="${L.id === state.activeId}">`
+        + (s ? `<span class="lec-slot">${esc(s)}</span>` : '')
+        + `<span class="lec-name">${esc(clean(L.name) || '名前未設定の講義')}</span>`
+        + (L.sample ? '<span class="lec-tag">例</span>' : '')
+        + '</button>';
+    }).join('') + `<button type="button" class="lec lec-add" id="add-lec">${icon('plus')}<span>講義を追加</span></button>`;
+    if (hadFocus) {
+      const btn = els.tabs.querySelector('.lec[aria-pressed="true"]');
+      if (btn) btn.focus();
+    }
+  }
+  const chipsHTML = (items, attrs = '') => items.map(([k, lb]) => `<button type="button" class="chip" data-val="${k}" aria-pressed="false"${attrs}>${esc(lb)}</button>`).join('');
+  function buildStaticControls() {
+    els.fields.innerHTML = chipsHTML(FIELD_ORDER.map(k => [k, FIELDS[k].label]));
+    els.years.innerHTML = chipsHTML(YEARS);
+    els.levels.innerHTML = chipsHTML(LEVELS);
+    els.formats.innerHTML = chipsHTML(FORMATS);
+    els.evals.innerHTML = chipsHTML(EVALS);
+    els.day.innerHTML = '<option value="">曜日</option>' + DAYS.map(d => `<option value="${d}">${d}曜</option>`).join('');
+    els.period.innerHTML = '<option value="">時限</option>' + PERIODS.map(p => `<option value="${p}">${p}限</option>`).join('');
+    els.tasks.innerHTML = GROUPS.map(([g, gl]) => `<div class="task-group"><h3>${gl}</h3><div class="task-grid">`
+      + TASKS.filter(t => t.group === g).map(t => `<button type="button" class="task" data-task="${t.id}" aria-pressed="false">${icon(t.icon)}<span class="task-t">${t.name}${t.tag ? `<span class="task-tag">${t.tag}</span>` : ''}</span><span class="task-d">${t.desc}</span></button>`).join('')
+      + '</div></div>').join('');
+  }
+  const syncChips = (host, isOn) => host.querySelectorAll('.chip').forEach(b => b.setAttribute('aria-pressed', String(isOn(b.dataset.val))));
+  function syncFieldChips() {
+    const L = active();
+    els.fields.querySelectorAll('.chip').forEach(b => {
+      const on = b.dataset.val === L.field;
+      b.setAttribute('aria-pressed', String(on));
+      const badge = b.querySelector('.auto');
+      const wantBadge = on && !L.fieldManual;
+      if (wantBadge && !badge) b.insertAdjacentHTML('beforeend', '<span class="auto">自動</span>');
+      else if (!wantBadge && badge) badge.remove();
+    });
+  }
+  function syncDetailChips() {
+    const L = active();
+    syncChips(els.years, k => L.year === k);
+    syncChips(els.levels, k => L.level === k);
+    syncChips(els.formats, k => L.format === k);
+    syncChips(els.evals, k => L.evals.includes(k));
+    renderMoreVals();
+  }
+  function renderMoreVals() {
+    const L = active();
+    const vals = [
+      L.year && labelOf(YEARS, L.year),
+      L.level && labelOf(LEVELS, L.level),
+      L.format && labelOf(FORMATS, L.format),
+      L.evals.length > 0 && L.evals.map(k => EVAL_TEXT[k]).join('・'),
+      slotLabel(L),
+    ].filter(Boolean);
+    els.moreVals.textContent = vals.length ? vals.join(' / ') : '学年・理解度・評価方法など（任意）。入れるとプロンプトがより的確になります';
+  }
+  function fillForm() {
+    const L = active();
+    els.name.value = L.name;
+    els.desc.value = L.desc;
+    els.day.value = L.day;
+    els.period.value = L.period;
+  }
+  const renderSample = () => { els.sample.hidden = !active().sample; };
+  function renderTaskHead() {
+    const t = currentTask();
+    els.tasks.querySelectorAll('.task').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.task === t.id)));
+    els.outIcon.innerHTML = icon(t.icon);
+    els.outName.textContent = t.name;
+    els.sheetTitle.textContent = t.name;
+    els.mbarTask.textContent = t.name;
+    els.notice.hidden = !t.notice;
+    els.notice.innerHTML = t.notice
+      ? `<p class="notice-title">${icon('alert')}<span>${esc(t.notice.title)}</span></p><ul>${t.notice.items.map(x => `<li>${esc(x)}</li>`).join('')}</ul>`
+      : '';
+  }
+  function renderTaskOptions() {
+    const L = active();
+    const task = currentTask();
+    const o = optsFor(L, task);
+    els.opts.hidden = !task.options.length;
+    els.opts.innerHTML = task.options.map(def => {
+      const id = `opt-${task.id}-${def.key}`;
+      const val = o[def.key];
+      const wide = def.wide || def.type === 'textarea' || def.type === 'toggle';
+      let inner = '';
+      if (def.type === 'seg' || def.type === 'multi') {
+        inner = `<span class="opt-label" id="${id}">${esc(def.label)}${def.type === 'multi' ? '<span class="hint">複数選べます</span>' : ''}</span>`
+          + `<div class="chips sm" role="group" aria-labelledby="${id}">`
+          + def.choices.map(([k, lb]) => `<button type="button" class="chip" data-opt="${def.key}" data-val="${k}" aria-pressed="${def.type === 'multi' ? val.includes(k) : val === k}">${esc(lb)}</button>`).join('')
+          + '</div>';
+      } else if (def.type === 'text') {
+        inner = `<label class="opt-label" for="${id}">${esc(def.label)}</label><input class="input" id="${id}" type="text" data-opt="${def.key}" autocomplete="off" placeholder="${esc(def.placeholder || '')}">`;
+      } else if (def.type === 'textarea') {
+        inner = `<label class="opt-label" for="${id}">${esc(def.label)}</label><textarea class="input" id="${id}" data-opt="${def.key}" rows="${def.rows || 2}" placeholder="${esc(def.placeholder || '')}"></textarea>`;
+      } else if (def.type === 'date') {
+        inner = `<label class="opt-label" for="${id}">${esc(def.label)}</label><div class="date-row"><input class="input" id="${id}" type="date" data-opt="${def.key}"><span class="date-left" id="date-left"></span></div>`;
+      } else if (def.type === 'toggle') {
+        inner = `<label class="toggle" for="${id}"><input id="${id}" type="checkbox" data-opt="${def.key}"${val ? ' checked' : ''}><span class="toggle-ui" aria-hidden="true"></span><span>${esc(def.label)}</span></label>`
+          + (def.hint ? `<span class="hint">${esc(def.hint)}</span>` : '');
+      }
+      return `<div class="opt${wide ? ' opt-wide' : ''}">${inner}</div>`;
+    }).join('');
+    els.opts.querySelectorAll('input[data-opt]:not([type="checkbox"]), textarea[data-opt]').forEach(el => { el.value = o[el.dataset.opt]; });
+    updateDateLeft();
+  }
+  function updateDateLeft() {
+    const out = document.getElementById('date-left');
+    if (!out) return;
+    const d = parseDate(optsFor(active(), currentTask()).date);
+    if (!d) { out.textContent = ''; return; }
+    const n = daysUntil(d);
+    out.textContent = n > 0 ? `あと${n}日` : n === 0 ? '今日' : `${-n}日前`;
+  }
+
+  function updatePrompt() {
+    const L = active();
+    const task = currentTask();
+    let raw;
+    try {
+      raw = task.build(L, optsFor(L, task));
+    } catch (e) {
+      console.error(e);
+      raw = 'プロンプトを作れませんでした。入力内容を確認してください。';
+    }
+    state.generated = raw;
+    if (state.editing) {
+      els.stale.hidden = strip(raw) === state.editBase;
+    } else {
+      els.view.innerHTML = toHTML(raw);
+      els.lgV.hidden = !raw.includes(V0);
+    }
+    updateMeta();
+  }
+  const currentText = () => (state.editing ? els.edit.value : strip(state.generated));
+  function updateMeta() {
+    const text = currentText();
+    els.chars.textContent = `${[...text].length.toLocaleString('ja-JP')}字`;
+    const n = (text.match(PH_PLAIN) || []).length;
+    els.phCount.hidden = !n;
+    els.phCount.textContent = n ? `書き換える【 】が${n}か所` : '';
+    els.lgPh.hidden = !n;
+  }
+  function setEditing(on) {
+    state.editing = on;
+    if (on) {
+      state.editBase = strip(state.generated);
+      els.edit.value = state.editBase;
+    }
+    els.view.hidden = on;
+    els.edit.hidden = !on;
+    els.legend.hidden = on;
+    els.editNote.hidden = !on;
+    els.stale.hidden = true;
+    els.editBtn.innerHTML = on ? `${icon('undo')}<span>元に戻す</span>` : `${icon('edit')}<span>編集する</span>`;
+    els.editBtn.setAttribute('aria-pressed', String(on));
+    if (on) updateMeta(); else updatePrompt();
+  }
+
+  /* ===== コピー ===== */
+  const COPY_LABEL = `${icon('copy')}<span>コピーする</span>`;
+  const COPIED_LABEL = `${icon('check')}<span>コピーしました</span>`;
+  const MCOPY_LABEL = `${icon('copy')}<span>コピー</span>`;
+  const MCOPIED_LABEL = `${icon('check')}<span>コピー済み</span>`;
+  let flashTimer = 0;
+  let toastTimer = 0;
+  function toast(msg) {
+    els.toast.textContent = msg;
+    els.toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => els.toast.classList.remove('show'), msg.length > 32 ? 4500 : 2800);
+  }
+  function legacyCopy(text) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;';
+    document.body.appendChild(ta);
+    ta.select();
+    let ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+    ta.remove();
+    return ok;
+  }
+  async function copyPrompt() {
+    const text = currentText();
+    let ok = false;
+    if (Native.Clipboard) {
+      try { await Native.Clipboard.write({ string: text }); ok = true; } catch (e) { ok = false; }
+    }
+    if (!ok) {
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(text);
+          ok = true;
+        }
+      } catch (e) { ok = false; }
+    }
+    if (!ok) ok = legacyCopy(text);
+    if (ok) {
+      haptic();
+      const n = (text.match(PH_PLAIN) || []).length;
+      toast(currentTask().copyToast || (n ? 'コピーしました。【 】の部分を書き換えてから送信してください' : 'コピーしました。AIのチャット欄に貼り付けてください'));
+      els.copyBtn.innerHTML = COPIED_LABEL;
+      els.mbarCopy.innerHTML = MCOPIED_LABEL;
+      clearTimeout(flashTimer);
+      flashTimer = setTimeout(() => { els.copyBtn.innerHTML = COPY_LABEL; els.mbarCopy.innerHTML = MCOPY_LABEL; }, 1800);
+    } else {
+      if (!state.editing) setEditing(true);
+      els.edit.focus();
+      els.edit.select();
+      toast('自動でコピーできませんでした。選択された文章をコピーしてください');
+    }
+  }
+  // アプリのみ：共有シートから AI アプリやメモに直接送る
+  async function sharePrompt() {
+    if (!Native.Share) return;
+    try {
+      await Native.Share.share({ text: currentText(), dialogTitle: 'プロンプトを送る' });
+    } catch (e) { /* 共有をキャンセルしたときも例外になるので何もしない */ }
+  }
+
+  /* ===== 操作 ===== */
+  function refreshLecture() {
+    renderTabs();
+    fillForm();
+    syncFieldChips();
+    syncDetailChips();
+    renderSample();
+    renderTaskOptions();
+    updatePrompt();
+  }
+  function switchLecture() {
+    if (state.editing) setEditing(false);
+    hideDelConfirm();
+    refreshLecture();
+    persist();
+  }
+  // 入力例の講義に手を加えたら、自分の講義として扱う
+  function touch(L) {
+    if (!L.sample) return;
+    L.sample = false;
+    renderSample();
+    renderTabs();
+  }
+  function hideDelConfirm() {
+    els.delConfirm.hidden = true;
+    els.delBtn.hidden = false;
+  }
+
+  els.tabs.addEventListener('click', e => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    if (b.id === 'add-lec') {
+      const L = blankLecture();
+      state.lectures.push(L);
+      state.activeId = L.id;
+      switchLecture();
+      els.name.focus();
+      return;
+    }
+    if (b.dataset.id && b.dataset.id !== state.activeId) {
+      state.activeId = b.dataset.id;
+      switchLecture();
+    }
+  });
+  els.clearSample.addEventListener('click', () => {
+    const L = active();
+    Object.assign(L, blankLecture(), { id: L.id });
+    switchLecture();
+    els.name.focus();
+  });
+  els.name.addEventListener('input', () => {
+    const L = active();
+    L.name = els.name.value;
+    const before = L.field;
+    if (!L.fieldManual) L.field = detectField(L.name);
+    touch(L);
+    renderTabs();
+    syncFieldChips();
+    if (L.field !== before) renderTaskOptions();
+    updatePrompt();
+    persist();
+  });
+  els.desc.addEventListener('input', () => {
+    const L = active();
+    L.desc = els.desc.value;
+    touch(L);
+    updatePrompt();
+    persist();
+  });
+  els.fields.addEventListener('click', e => {
+    const b = e.target.closest('.chip');
+    if (!b) return;
+    const L = active();
+    L.field = L.field === b.dataset.val ? null : b.dataset.val;
+    L.fieldManual = true;
+    touch(L);
+    syncFieldChips();
+    renderTaskOptions();
+    updatePrompt();
+    persist();
+  });
+  function bindSingle(host, key) {
+    host.addEventListener('click', e => {
+      const b = e.target.closest('.chip');
+      if (!b) return;
+      const L = active();
+      L[key] = L[key] === b.dataset.val ? null : b.dataset.val;
+      touch(L);
+      syncDetailChips();
+      updatePrompt();
+      persist();
+    });
+  }
+  bindSingle(els.years, 'year');
+  bindSingle(els.levels, 'level');
+  bindSingle(els.formats, 'format');
+  els.evals.addEventListener('click', e => {
+    const b = e.target.closest('.chip');
+    if (!b) return;
+    const L = active();
+    const k = b.dataset.val;
+    const next = L.evals.includes(k) ? L.evals.filter(x => x !== k) : L.evals.concat(k);
+    L.evals = EVALS.map(x => x[0]).filter(x => next.includes(x));
+    touch(L);
+    syncDetailChips();
+    updatePrompt();
+    persist();
+  });
+  [['day', els.day], ['period', els.period]].forEach(([key, el]) => {
+    el.addEventListener('change', () => {
+      const L = active();
+      L[key] = el.value;
+      touch(L);
+      renderTabs();
+      renderMoreVals();
+      persist();
+    });
+  });
+  els.more.addEventListener('toggle', () => { state.moreOpen = els.more.open; persist(); });
+
+  els.delBtn.addEventListener('click', () => {
+    els.delBtn.hidden = true;
+    els.delConfirm.hidden = false;
+    els.delNo.focus();
+  });
+  els.delNo.addEventListener('click', () => { hideDelConfirm(); els.delBtn.focus(); });
+  els.delYes.addEventListener('click', () => {
+    const idx = state.lectures.findIndex(l => l.id === state.activeId);
+    if (idx >= 0) state.lectures.splice(idx, 1);
+    if (!state.lectures.length) state.lectures.push(blankLecture());
+    state.activeId = state.lectures[Math.max(0, idx - 1)].id;
+    switchLecture();
+    toast('講義を削除しました');
+  });
+
+  els.tasks.addEventListener('click', e => {
+    const b = e.target.closest('.task');
+    if (!b || b.dataset.task === state.taskId) return;
+    state.taskId = b.dataset.task;
+    if (state.editing) setEditing(false);
+    renderTaskHead();
+    renderTaskOptions();
+    updatePrompt();
+    els.view.scrollTop = 0;
+    persist();
+  });
+
+  els.opts.addEventListener('click', e => {
+    const b = e.target.closest('.chip[data-opt]');
+    if (!b) return;
+    const L = active();
+    const task = currentTask();
+    const def = task.options.find(d => d.key === b.dataset.opt);
+    if (!def) return;
+    const k = b.dataset.val;
+    if (def.type === 'seg') {
+      setOpt(L, task, def.key, k);
+    } else {
+      const cur = optsFor(L, task)[def.key];
+      if (cur.includes(k) && def.min && cur.length <= def.min) return;
+      const next = cur.includes(k) ? cur.filter(x => x !== k) : cur.concat(k);
+      setOpt(L, task, def.key, def.choices.map(c => c[0]).filter(x => next.includes(x)));
+    }
+    const now = optsFor(L, task)[def.key];
+    b.parentElement.querySelectorAll('.chip').forEach(c => {
+      c.setAttribute('aria-pressed', String(def.type === 'seg' ? c.dataset.val === now : now.includes(c.dataset.val)));
+    });
+    updatePrompt();
+    persist();
+  });
+  function onOptInput(e) {
+    const el = e.target;
+    const key = el.dataset && el.dataset.opt;
+    if (!key || el.tagName === 'BUTTON') return;
+    const L = active();
+    const task = currentTask();
+    setOpt(L, task, key, el.type === 'checkbox' ? el.checked : el.value);
+    if (el.type === 'date') updateDateLeft();
+    updatePrompt();
+    persist();
+  }
+  els.opts.addEventListener('input', onOptInput);
+  els.opts.addEventListener('change', onOptInput);
+
+  els.editBtn.addEventListener('click', () => {
+    setEditing(!state.editing);
+    if (state.editing) els.edit.focus();
+  });
+  els.edit.addEventListener('input', updateMeta);
+  els.regen.addEventListener('click', () => setEditing(false));
+  els.copyBtn.addEventListener('click', copyPrompt);
+  els.mbarCopy.addEventListener('click', copyPrompt);
+  els.shareBtn.addEventListener('click', sharePrompt);
+  els.mbarShare.addEventListener('click', sharePrompt);
+  els.mbarInfo.addEventListener('click', () => {
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    els.outPanel.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+  });
+  window.addEventListener('pagehide', saveNow);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') saveNow(); });
+
+  /* ===== 起動 ===== */
+  async function init() {
+    const canSave = !!Native.Preferences || storageWorks();
+    const data = canSave ? await load() : null;
+    if (data) {
+      const seen = new Set();
+      state.lectures = data.lectures.map(normalizeLecture).map(L => {
+        if (seen.has(L.id)) L.id = uid();
+        seen.add(L.id);
+        return L;
+      });
+      state.activeId = state.lectures.some(l => l.id === data.activeId) ? data.activeId : state.lectures[0].id;
+      state.taskId = TASK_MAP[data.taskId] ? data.taskId : 'summary';
+      state.moreOpen = !!data.moreOpen;
+    } else {
+      const L = sampleLecture();
+      state.lectures = [L];
+      state.activeId = L.id;
+    }
+    if (!canSave) els.saveNote.textContent = 'このブラウザでは保存できないため、ページを閉じると入力内容は消えます';
+    if (isNative) {
+      els.saveNote.textContent = '入力した内容はこの端末に自動で保存されます';
+      $('privacy-note').textContent = '入力した内容はこの端末の中にだけ保存され、どこにも送信されません。';
+      $('app-links').hidden = false;
+    }
+    if (Native.Share) {
+      const shareIcon = Cap.getPlatform() === 'android' ? 'shareAndroid' : 'share';
+      els.shareBtn.innerHTML = `${icon(shareIcon)}<span>共有</span>`;
+      els.mbarShare.innerHTML = icon(shareIcon);
+      els.shareBtn.hidden = false;
+      els.mbarShare.hidden = false;
+    }
+
+    const now = new Date();
+    els.sheetDate.textContent = `${now.getFullYear()} . ${String(now.getMonth() + 1).padStart(2, '0')} . ${String(now.getDate()).padStart(2, '0')}`;
+    els.copyBtn.innerHTML = COPY_LABEL;
+    els.mbarCopy.innerHTML = MCOPY_LABEL;
+    els.editBtn.innerHTML = `${icon('edit')}<span>編集する</span>`;
+    els.more.open = state.moreOpen;
+
+    buildStaticControls();
+    renderTaskHead();
+    refreshLecture();
+  }
+  init().catch(e => console.error(e));
+})();
+</script>

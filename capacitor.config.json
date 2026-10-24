@@ -1,0 +1,11 @@
+{
+  "appId": "jp.kougiprompt.app",
+  "appName": "講義プロンプト",
+  "webDir": "www",
+  "plugins": {
+    "SystemBars": {
+      "insetsHandling": "css",
+      "initialViewportFitValueHint": "cover"
+    }
+  }
+}
