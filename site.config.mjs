@@ -12,10 +12,10 @@ export default {
   siteUrl: 'https://kougi-prompt.github.io',
 
   // 運営者名（ニックネームでも可）。「このサイトについて」とプライバシーポリシーに表示されます
-  operatorName: '',
+  operatorName: 'デカいカマキリ',
 
   // 連絡先。どちらか一方でOK。フォーム（Googleフォームなど）があればそちらを優先して表示します
-  contactFormUrl: '',
+  contactFormUrl: 'https://forms.gle/ZFu6G3yGX7kiN2tKA',
   contactEmail: '',
 
   // 応援用のリンク（OFUSE など）。空なら表示しません
