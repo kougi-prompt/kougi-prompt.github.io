@@ -23,12 +23,14 @@
 
 ## 1. サイトを公開する（無料）
 
-GitHub Pages を使います。無料プランの GitHub Pages は**公開（Public）リポジトリ**でしか使えないので、最初にリポジトリを公開にします。
+GitHub Pages を使います。このリポジトリは組織 `kougi-prompt` の `kougi-prompt.github.io` なので、サイトは **https://kougi-prompt.github.io/** で公開されます。
 
-1. GitHub でこのリポジトリを開き、**Settings → General** の一番下（Danger Zone）の **Change visibility** で **Public** にします。
+無料プランの GitHub Pages は**公開（Public）リポジトリ**でしか使えません。設定は次のとおりです（設定済みなら確認だけで大丈夫です）。
+
+1. リポジトリの **Settings → General** の一番下（Danger Zone）の **Change visibility** で **Public** にします。
 2. **Settings → Pages** を開き、「Build and deployment」の **Source** を **GitHub Actions** にします。
 3. main ブランチに変更が入ると、自動でサイトが作られて公開されます。進み具合は **Actions** タブで見られます。すぐに公開したいときは、Actions タブの「Webサイトを公開」→ **Run workflow** で手動でも動かせます。
-4. 数分で `https://gazamidaiou-boop.github.io/kougi-prompt-app/` に公開されます。
+4. 数分で `https://kougi-prompt.github.io/` に反映されます。
 
 > リポジトリを非公開のままにしたい場合は、[Cloudflare Pages](https://pages.cloudflare.com/)（無料）でも公開できます。リポジトリをつないで、ビルドコマンドに `npm run build:site`、出力先に `site`、環境変数に `NODE_VERSION = 22` を設定してください。
 
@@ -43,7 +45,7 @@ GitHub の画面で `site.config.mjs` を開き、鉛筆のアイコンから直
 | `operatorName` | 運営者名。ニックネームでも構いません |
 | `contactFormUrl` | お問い合わせ用のフォームのURL。[Google フォーム](https://www.google.com/forms/about/)で無料で作れて、メールアドレスを公開しなくて済むのでおすすめです |
 | `contactEmail` | フォームを使わない場合の連絡先メールアドレス |
-| `siteUrl` | 公開したURL（最後の `/` は付けない）。例：`https://gazamidaiou-boop.github.io/kougi-prompt-app` |
+| `siteUrl` | 公開したURL（最後の `/` は付けない）。`https://kougi-prompt.github.io` を設定済みです。独自ドメインに移ったときに書き換えます |
 
 運営者名と連絡先は、プライバシーポリシーと「このサイトについて」「お問い合わせ」のページに表示されます。広告の審査でも確認されるので、公開前に必ず埋めてください。
 
@@ -54,8 +56,8 @@ GitHub の画面で `site.config.mjs` を開き、鉛筆のアイコンから直
 ### 申し込む前に知っておくこと
 
 - AdSense に申し込めるのは **18 歳以上**です。
-- **独自ドメイン**（例：`kougi-prompt.com`、年 1,500 円前後から）があると審査に通りやすいと言われています。また、`〜.github.io/kougi-prompt-app/` のようにサブフォルダのURLだと、広告に必要な `ads.txt` をサイトのいちばん上の階層に置けません。
-  - 無料のまま試すなら、リポジトリ名を `gazamidaiou-boop.github.io` に変えると、`https://gazamidaiou-boop.github.io/` で公開されて `ads.txt` も置けるようになります。
+- このサイトは `https://kougi-prompt.github.io/` のように URL のいちばん上の階層にあるので、広告に必要な `ads.txt` も正しく置けます。
+- ただし、`github.io` のような無料のURLより、**独自ドメイン**（例：`kougi-prompt.com`、年 1,500 円前後から）のほうが審査に通りやすいと言われています。まずは今のURLで申し込み、通らなかったときにドメインを検討すれば十分です。
 - 審査では、サイトに十分な内容があるかを見られます。記事・プライバシーポリシー・お問い合わせのページは用意してありますが、申し込む前に自分の体験をもとにした記事を 1〜2 本足すと、さらに通りやすくなります（書き方は「4. 記事を書く・直す」）。
 
 ### 手順

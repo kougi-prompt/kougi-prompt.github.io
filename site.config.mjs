@@ -9,7 +9,7 @@ export default {
 
   // 公開したサイトのURL（最後の / は付けない）。例：'https://kougi-prompt.com'
   // 空でも動きますが、検索エンジン向けのファイル（sitemap.xml）や SNS 用の画像の指定は作られません。
-  siteUrl: '',
+  siteUrl: 'https://kougi-prompt.github.io',
 
   // 運営者名（ニックネームでも可）。「このサイトについて」とプライバシーポリシーに表示されます
   operatorName: '',
