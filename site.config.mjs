@@ -25,7 +25,7 @@ export default {
   ads: {
     // Google AdSense のサイト運営者ID（例：'ca-pub-1234567890123456'）
     // 入れると、AdSense の審査用コードと ads.txt が自動で入ります
-    adsenseClient: '',
+    adsenseClient: 'ca-pub-4502375566114455',
 
     // 広告を出す場所ごとの設定
     //   adsenseSlot：AdSense の管理画面で作った広告ユニットの「data-ad-slot」の番号
