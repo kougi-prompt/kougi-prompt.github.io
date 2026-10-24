@@ -76,6 +76,7 @@ function headTags({ title, description, path, type }) {
     '<meta name="theme-color" content="#ECF0EE" media="(prefers-color-scheme: light)">',
     '<meta name="theme-color" content="#101A17" media="(prefers-color-scheme: dark)">',
     '<meta name="apple-mobile-web-app-title" content="講義プロンプト">',
+    text(config.googleSiteVerification) && `<meta name="google-site-verification" content="${esc(text(config.googleSiteVerification))}">`,
     adClient && `<meta name="google-adsense-account" content="${esc(adClient)}">`,
     adClient && `<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${encodeURIComponent(adClient)}" crossorigin="anonymous"></script>`,
   ].filter(Boolean).join('\n');
