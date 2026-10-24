@@ -43,19 +43,70 @@ const vars = {
   contactBlock: contactBlock || '【連絡先（site.config.mjs の contactFormUrl か contactEmail）】',
 };
 
+// ---------- 広告 ----------
+// 広告を出す場所と、そこで使う AdSense の広告ユニットの種類。
+// ツールの操作ボタンの近くや、画面下に固定したコピーのバーには置かない（誤クリックを防ぎ、使いやすさを保つ）。
+const AD_PLACES = {
+  afterTasks: 'display',      // ツール画面：「やりたいこと」の下（スマホでは「やりたいこと」と「プロンプト」の間）
+  beforeFooter: 'display',    // ツール画面：読みものの下
+  rail: 'vertical',           // パソコンの広い画面の右側。空いている余白に置き、スクロールしても見える
+  articleMiddle: 'in-article', // 記事：本文の途中（真ん中あたりの見出しの前）
+  articleEnd: 'multiplex',    // 記事：本文の最後
+};
 const ads = config.ads || {};
 const adClient = text(ads.adsenseClient);
 if (adClient && !/^ca-pub-\d{10,}$/.test(adClient)) warnings.push(`adsenseClient「${adClient}」の形を確認してください（例：ca-pub-1234567890123456）。`);
-function adSlot(name) {
-  const slot = (ads.slots && ads.slots[name]) || {};
+const slotOf = name => (ads.slots && (ads.slots[name] || (name === 'articleEnd' && ads.slots.article))) || {};
+function adBox(name) {
+  const slot = slotOf(name);
+  const format = AD_PLACES[name];
+  const id = text(String(slot.adsenseSlot ?? ''));
   let inner = '';
-  if (text(slot.html)) {
-    inner = text(slot.html);
-  } else if (adClient && text(String(slot.adsenseSlot ?? ''))) {
-    inner = `<ins class="adsbygoogle" style="display:block" data-ad-client="${esc(adClient)}" data-ad-slot="${esc(text(String(slot.adsenseSlot)))}" data-ad-format="auto" data-full-width-responsive="true"></ins>\n`
-      + '<script>(adsbygoogle = window.adsbygoogle || []).push({});</script>';
+  if (text(slot.html)) inner = text(slot.html);
+  else if (adClient && id) inner = `<div class="ad-fill" data-ad-slot="${esc(id)}" data-ad-format="${format}"></div>`;
+  return inner ? `<aside class="ad-box ad-${name}" data-format="${format}" aria-label="広告"><p class="ad-label">広告</p>${inner}</aside>` : '';
+}
+// 広告は画面に近づいてから読み込む（ページの表示が速くなり、見られないまま終わる広告が減る）。
+// 画面幅の都合で隠れている枠（スマホでの右側の枠など）は読み込まない。
+const AD_LOADER = `<script>
+(function () {
+  var client = ${JSON.stringify(adClient)};
+  var formats = {
+    'display': { 'data-ad-format': 'auto', 'data-full-width-responsive': 'true' },
+    'vertical': { 'data-ad-format': 'vertical' },
+    'in-article': { 'data-ad-format': 'fluid', 'data-ad-layout': 'in-article' },
+    'multiplex': { 'data-ad-format': 'autorelaxed' }
+  };
+  function load(box) {
+    if (box.getAttribute('data-loaded') || !box.getClientRects().length) return;
+    box.setAttribute('data-loaded', '1');
+    var ins = document.createElement('ins');
+    ins.className = 'adsbygoogle';
+    ins.style.display = 'block';
+    ins.setAttribute('data-ad-client', client);
+    ins.setAttribute('data-ad-slot', box.getAttribute('data-ad-slot'));
+    var attrs = formats[box.getAttribute('data-ad-format')] || formats.display;
+    for (var key in attrs) ins.setAttribute(key, attrs[key]);
+    box.appendChild(ins);
+    try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch (e) {}
   }
-  return inner ? `<aside class="ad-slot ad-${name}" aria-label="広告"><p class="ad-label">広告</p>${inner}</aside>` : '';
+  var boxes = [].slice.call(document.querySelectorAll('.ad-fill[data-ad-slot]'));
+  if (!('IntersectionObserver' in window)) { boxes.forEach(load); return; }
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
+      if (entry.isIntersecting && entry.target.getClientRects().length) { io.unobserve(entry.target); load(entry.target); }
+    });
+  }, { rootMargin: '800px 0px' });
+  boxes.forEach(function (box) { io.observe(box); });
+})();
+</script>`;
+const adScript = html => (html.includes('class="ad-fill"') ? AD_LOADER : '');
+// 記事の真ん中あたりの見出し（h2）の前に広告を入れる。見出しが少ない短い記事には入れない
+function withMiddleAd(html, ad) {
+  const heads = [...html.matchAll(/<h2[\s>]/g)].map(m => m.index);
+  if (!ad || heads.length < 3) return html;
+  const at = heads[Math.floor(heads.length / 2)];
+  return `${html.slice(0, at)}${ad}\n${html.slice(at)}`;
 }
 
 function headTags({ title, description, path, type }) {
@@ -118,6 +169,10 @@ function readPage(file) {
     type: data.type === 'article' ? 'article' : 'page',
     order: Number(data.order) || 99,
     updated: data.updated || today,
+    // この記事が役立つツールのタスク（ツール画面の「コツ」のリンクと、記事からツールへのリンクに使う）
+    tasks: (data.tasks || '').split(',').map(s => s.trim()).filter(Boolean),
+    // 記事の最後の「ツールを使う」で選んでおくタスク（none なら選ばずに開く）
+    cta: data.cta || '',
     html,
   };
 }
@@ -135,6 +190,7 @@ const copyright = `© ${new Date().getFullYear()} ${esc(siteName)}`;
 const brand = siteName === '講義プロンプトメーカー' ? '講義<span class="hl">プロンプト</span>メーカー' : esc(siteName);
 const SW_SCRIPT = "<script>if ('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));</script>";
 const layout = readFileSync(join(root, 'site-src', 'layout.html'), 'utf8');
+const rail = adBox('rail');
 
 for (const p of pages) {
   const isArticle = p.type === 'article';
@@ -153,29 +209,40 @@ for (const p of pages) {
   const related = isArticle
     ? `<section class="related" aria-labelledby="related-h"><h2 id="related-h">ほかの読みもの</h2><ul>${articles.filter(a => a !== p).map(linkItem).join('')}</ul></section>`
     : '';
-  const cta = '<div class="cta-box"><p>講義に合わせたプロンプトを、いますぐ作ってみる</p><a href="./">ツールを使う</a></div>';
-  writeFileSync(join(out, `${p.slug}.html`), fill(layout, {
+  // 記事に合うタスクを選んだ状態でツールを開く（例：./#summary）
+  const ctaTask = p.cta === 'none' ? '' : (p.cta || p.tasks[0] || '');
+  const cta = `<div class="cta-box"><p>講義に合わせたプロンプトを、いますぐ作ってみる</p><a href="./${ctaTask ? `#${esc(ctaTask)}` : ''}">ツールを使う</a></div>`;
+  // 広告は記事だけに出す（プライバシーポリシーやお問い合わせなどの固定ページには出さない）
+  const body = isArticle ? withMiddleAd(p.html, adBox('articleMiddle')) : p.html;
+  const after = [isArticle ? adBox('articleEnd') : '', cta, related].filter(Boolean).join('\n');
+  const pageRail = isArticle ? rail : '';
+  const html = fill(layout, {
     title: esc(fullTitle),
     head: headTags({ title: fullTitle, description: p.description, path: `${p.slug}.html`, type: isArticle ? 'article' : 'website' }) + jsonLd,
     brand,
+    mainClass: pageRail ? ' has-rail' : '',
     pageTitle: esc(p.title),
     meta: isArticle ? `<p class="article-meta">更新日：<time datetime="${esc(p.updated)}">${esc(p.updated.replace(/-/g, '.'))}</time></p>` : '',
-    body: p.html,
-    after: [isArticle ? adSlot('article') : '', cta, related].filter(Boolean).join('\n'),
+    body,
+    after,
+    rail: pageRail,
     nav,
     copyright,
     scripts: SW_SCRIPT,
-  }));
+  });
+  writeFileSync(join(out, `${p.slug}.html`), html.replace('</body>', `${adScript(html)}\n</body>`));
 }
 
 writeFileSync(join(out, '404.html'), fill(layout, {
   title: esc(`ページが見つかりません｜${siteName}`),
   head: '<meta name="robots" content="noindex">\n<link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png">',
   brand,
+  mainClass: '',
   pageTitle: 'ページが見つかりません',
   meta: '',
   body: '<p>お探しのページは、移動したか削除された可能性があります。</p>\n<p><a href="./">トップページ（ツール）に戻る</a></p>',
   after: '',
+  rail: '',
   nav,
   copyright,
   scripts: '',
@@ -193,8 +260,9 @@ const readings = `<section class="readings" aria-labelledby="h-readings">
   <ul class="reading-list">${articles.map(a => `<li><a href="${a.slug}.html"><span class="r-title">${esc(a.title)}</span><span class="r-desc">${esc(a.card)}</span></a></li>`).join('')}</ul>
 </section>`;
 let indexBody = body;
-indexBody = replaceOnce(indexBody, '<!-- slot:after-tasks -->', adSlot('afterTasks'));
-indexBody = replaceOnce(indexBody, '<!-- slot:before-footer -->', `<div class="wrap site-band">\n${readings}\n${adSlot('beforeFooter')}\n</div>`);
+indexBody = replaceOnce(indexBody, '<!-- slot:after-tasks -->', adBox('afterTasks'));
+indexBody = replaceOnce(indexBody, '<!-- slot:rail -->', rail);
+indexBody = replaceOnce(indexBody, '<!-- slot:before-footer -->', `<div class="wrap site-band">\n${readings}\n${adBox('beforeFooter')}\n</div>`);
 indexBody = replaceOnce(indexBody,
   '<li id="privacy-note">入力した内容はこのブラウザの中にだけ保存され、どこにも送信されません。</li>',
   '<li id="privacy-note">入力した内容はこのブラウザの中にだけ保存され、サーバーには送信されません。広告の配信については<a href="privacy.html">プライバシーポリシー</a>をご覧ください。</li>');
@@ -212,6 +280,12 @@ const appJsonLd = {
   offers: { '@type': 'Offer', price: '0', priceCurrency: 'JPY' },
   ...(siteUrl ? { url: absUrl('') } : {}),
 };
+// ツール画面の「コツ」のリンク：タスクごとに、そのタスクに合う記事（content/*.md の tasks）を出す
+const tips = {};
+for (const a of articles) {
+  for (const task of a.tasks) if (!tips[task]) tips[task] = { href: `${a.slug}.html`, title: a.title };
+}
+const tipsScript = `<script>window.KOUGI_TIPS = ${JSON.stringify(tips).replace(/</g, '\\u003c')};</script>`;
 writeFileSync(join(out, 'index.html'), `<!doctype html>
 <html lang="ja">
 <head>
@@ -221,13 +295,15 @@ writeFileSync(join(out, 'index.html'), `<!doctype html>
 <meta name="format-detection" content="telephone=no">
 ${headTags({ title: indexTitle, description: text(config.description), path: '', type: 'website' })}
 <script type="application/ld+json">${JSON.stringify(appJsonLd)}</script>
+${tipsScript}
 <link rel="stylesheet" href="fonts/fonts.css">
 <style>${BASE_CSS}</style>
 ${head.replace(/<title>[^<]*<\/title>/, `<title>${esc(indexTitle)}</title>`)}
 <link rel="stylesheet" href="site.css">
 </head>
-<body>
+<body${rail ? ' class="has-rail"' : ''}>
 ${indexBody}
+${adScript(indexBody)}
 ${SW_SCRIPT}
 </body>
 </html>

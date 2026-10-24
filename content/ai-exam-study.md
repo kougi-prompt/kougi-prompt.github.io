@@ -3,6 +3,7 @@ title: AIを使った試験勉強の進め方
 description: 試験日から逆算した学習計画、わからない所の解説、想定問題、暗記カード、直前まとめまで、AIを使った試験勉強の流れを5つのステップで紹介します。
 card: 学習計画から想定問題、暗記カード、直前まとめまでの流れ。
 type: article
+tasks: plan, quiz, cards, cram
 order: 3
 updated: 2026-10-24
 ---

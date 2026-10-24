@@ -3,6 +3,7 @@ title: AIで講義資料を要約するときの5つのコツ
 description: AIに講義資料を要約させると、講義に合わない一般論や、資料にない間違いが混ざることがあります。復習に使える要約を作るための5つのコツを、プロンプトの例とあわせて紹介します。
 card: 講義に合わない要約や、資料にない間違いを防ぐためのコツ。
 type: article
+tasks: summary, notes, explain, glossary, preview
 order: 2
 updated: 2026-10-24
 ---

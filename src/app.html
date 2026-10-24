@@ -426,6 +426,9 @@ mark.ph, .ph-count {
 .btn.danger { color: var(--red); background: transparent; border-color: currentColor; }
 
 .howto { margin: 0; padding: 12px 16px 12px 36px; display: grid; gap: 2px; font-size: 13px; color: var(--ink-2); background: var(--desk); border-radius: 12px; }
+.task-tip { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; font-size: 13px; line-height: 1.6; }
+.task-tip-label { flex: none; padding: 0 8px; font-size: 11.5px; font-weight: 700; letter-spacing: .06em; color: var(--heading); border: 1px solid currentColor; border-radius: 999px; }
+.task-tip a { font-weight: 500; color: var(--pen); text-underline-offset: 3px; }
 
 @media (min-width: 960px) {
   .out {
@@ -640,7 +643,9 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; z-index: 15; heigh
       <li>ChatGPT・Claude・Gemini などのチャット欄に貼り付ける</li>
       <li>【 】の部分を書き換えるか、資料のファイルを添付して送信する</li>
     </ol>
+    <p class="task-tip" id="task-tip" hidden></p>
   </section>
+  <!-- slot:rail -->
 </main>
 
 <!-- slot:before-footer -->
@@ -1520,7 +1525,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; z-index: 15; heigh
     sheetTitle: $('sheet-title'), sheetDate: $('sheet-date'), legend: $('legend'), lgV: $('lg-v'), lgPh: $('lg-ph'),
     editNote: $('edit-note'), stale: $('stale'), regen: $('regen'), view: $('prompt-view'), edit: $('prompt-edit'),
     chars: $('char-count'), phCount: $('ph-count'), editBtn: $('edit-btn'), shareBtn: $('share-btn'), copyBtn: $('copy-btn'),
-    outPanel: $('out-panel'), mbarInfo: $('mbar-info'), mbarTask: $('mbar-task'), mbarShare: $('mbar-share'), mbarCopy: $('mbar-copy'), toast: $('toast'),
+    tip: $('task-tip'), outPanel: $('out-panel'), mbarInfo: $('mbar-info'), mbarTask: $('mbar-task'), mbarShare: $('mbar-share'), mbarCopy: $('mbar-copy'), toast: $('toast'),
   };
 
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -1614,6 +1619,10 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; z-index: 15; heigh
     els.notice.innerHTML = t.notice
       ? `<p class="notice-title">${icon('alert')}<span>${esc(t.notice.title)}</span></p><ul>${t.notice.items.map(x => `<li>${esc(x)}</li>`).join('')}</ul>`
       : '';
+    // Webサイト版では、タスクに合う記事へのリンクを出す（window.KOUGI_TIPS はサイトのビルド時に入る）
+    const tip = window.KOUGI_TIPS && window.KOUGI_TIPS[t.id];
+    els.tip.hidden = !tip;
+    els.tip.innerHTML = tip ? `<span class="task-tip-label">コツ</span><a href="${esc(tip.href)}">${esc(tip.title)}</a>` : '';
   }
   function renderTaskOptions() {
     const L = active();
@@ -1959,6 +1968,10 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; z-index: 15; heigh
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     els.outPanel.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
   });
+  window.addEventListener('hashchange', () => {
+    const b = els.tasks.querySelector(`.task[data-task="${location.hash.slice(1)}"]`);
+    if (b) b.click();
+  });
   window.addEventListener('pagehide', saveNow);
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') saveNow(); });
 
@@ -1981,6 +1994,9 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; z-index: 15; heigh
       state.lectures = [L];
       state.activeId = L.id;
     }
+    // 記事のリンクなどから「#summary」のように開かれたら、そのタスクを選んだ状態にする
+    const hashTask = location.hash.slice(1);
+    if (TASK_MAP[hashTask]) state.taskId = hashTask;
     if (!canSave) els.saveNote.textContent = 'このブラウザでは保存できないため、ページを閉じると入力内容は消えます';
     if (isNative) {
       els.saveNote.textContent = '入力した内容はこの端末に自動で保存されます';

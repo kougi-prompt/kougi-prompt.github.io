@@ -16,16 +16,19 @@
     <a class="site-cta" href="./">ツールを使う</a>
   </div>
 </header>
-<main class="wrap site-main">
-  <article class="article">
-    <p class="crumb"><a href="./">ホーム</a><span aria-hidden="true"> › </span>{{pageTitle}}</p>
-    <h1>{{pageTitle}}</h1>
-    {{meta}}
-    <div class="article-body">
+<main class="wrap site-main{{mainClass}}">
+  <div class="site-content">
+    <article class="article">
+      <p class="crumb"><a href="./">ホーム</a><span aria-hidden="true"> › </span>{{pageTitle}}</p>
+      <h1>{{pageTitle}}</h1>
+      {{meta}}
+      <div class="article-body">
 {{body}}
-    </div>
-  </article>
+      </div>
+    </article>
 {{after}}
+  </div>
+{{rail}}
 </main>
 <footer class="site-footer">
   <div class="wrap">

@@ -79,6 +79,7 @@
 }
 
 .site-main { display: grid; gap: 24px; padding-block: 28px 44px; }
+.site-content { display: grid; gap: 24px; min-width: 0; }
 .article {
   width: 100%;
   max-width: 46em;
@@ -215,8 +216,27 @@
 .r-title { font-size: 15px; font-weight: 700; line-height: 1.5; }
 .r-desc { font-size: 12.5px; line-height: 1.6; color: var(--ink-2); }
 
-/* 広告枠：広告であることがわかるように「広告」と表示する */
-.ad-slot { display: grid; gap: 4px; min-width: 0; text-align: center; }
+/* 広告枠：広告であることがわかるように「広告」と表示する。
+   読み込む前から高さを確保して、広告が出たときにページがずれないようにする。 */
+.ad-box { display: grid; gap: 6px; min-width: 0; text-align: center; }
 .ad-label { margin: 0; font-size: 11px; letter-spacing: .08em; color: var(--ink-3); }
-.ad-slot ins { display: block; min-height: 100px; }
-.ad-article { width: 100%; max-width: 46em; margin: 0 auto; }
+.ad-fill { min-width: 0; min-height: 250px; }
+.ad-box[data-format="in-article"] .ad-fill { min-height: 200px; }
+.ad-box[data-format="multiplex"] .ad-fill { min-height: 320px; }
+.ad-box[data-format="vertical"] .ad-fill { min-height: 600px; }
+/* 広告が配信されなかった枠は、ラベルごと隠す */
+.ad-box:has(ins[data-ad-status="unfilled"]) { display: none; }
+.article-body .ad-box { margin: 2.2em 0; }
+.ad-articleEnd { width: 100%; max-width: 46em; margin: 0 auto; }
+
+/* 右側の縦長の広告：余白が十分ある広い画面だけに出し、スクロールしても見えるようにする */
+.ad-rail { display: none; }
+@media (min-width: 1680px) {
+  body.has-rail .wrap { max-width: 1640px; }
+  body.has-rail .layout { grid-template-columns: minmax(0, 1fr) minmax(0, 1.12fr) 300px; }
+  body.has-rail .layout > .ad-rail { display: grid; align-content: start; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 16px); }
+}
+@media (min-width: 1200px) {
+  .site-main.has-rail { grid-template-columns: minmax(0, 46em) 300px; justify-content: center; align-items: start; column-gap: 32px; }
+  .site-main.has-rail > .ad-rail { display: grid; align-content: start; position: sticky; top: 24px; }
+}

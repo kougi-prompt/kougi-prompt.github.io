@@ -30,13 +30,15 @@ export default {
     // 入れると、AdSense の審査用コードと ads.txt が自動で入ります
     adsenseClient: 'ca-pub-4502375566114455',
 
-    // 広告を出す場所ごとの設定
-    //   adsenseSlot：AdSense の管理画面で作った広告ユニットの「data-ad-slot」の番号
+    // 広告を出す場所ごとの設定。AdSense の「広告」→「広告ユニットごと」で、右に書いた種類の広告ユニットを作る
+    //   adsenseSlot：作った広告ユニットの「data-ad-slot」の番号
     //   html：AdSense 以外（忍者AdMax など）を使うときは、配信タグをそのまま貼る（こちらが優先）
     slots: {
-      afterTasks: { adsenseSlot: '', html: '' },   // ツール画面：「やりたいこと」の下
-      beforeFooter: { adsenseSlot: '', html: '' }, // ツール画面：ページの下のほう（読みものの下）
-      article: { adsenseSlot: '', html: '' },      // 記事ページ：本文の下
+      afterTasks: { adsenseSlot: '', html: '' },    // ツール画面「やりたいこと」の下 …… ディスプレイ広告
+      beforeFooter: { adsenseSlot: '', html: '' },  // ツール画面のいちばん下 …… ディスプレイ広告
+      rail: { adsenseSlot: '', html: '' },          // パソコンの広い画面の右側 …… ディスプレイ広告
+      articleMiddle: { adsenseSlot: '', html: '' }, // 記事の途中 …… 記事内広告
+      articleEnd: { adsenseSlot: '', html: '' },    // 記事の最後 …… Multiplex 広告
     },
   },
 };

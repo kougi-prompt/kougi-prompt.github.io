@@ -3,6 +3,7 @@ title: レポートでAIを使う前に知っておきたいこと
 description: レポートや課題でAIを使うときは、大学や講義のルールの確認が欠かせません。不正行為とみなされるケース、AIの文章の落とし穴、ルールの範囲で上手に使う方法、AIを使ったことの書き方をまとめました。
 card: 大学のルール、不正とみなされるケース、上手な使い方。
 type: article
+tasks: theme, outline, search, review, reading, present, fulltext
 order: 4
 updated: 2026-10-24
 ---

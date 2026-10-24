@@ -3,6 +3,8 @@ title: 使い方ガイド
 description: 講義プロンプトメーカーの使い方を、講義の入力からAIへの貼り付けまで3つのステップで説明します。スマホのホーム画面に追加する方法も紹介します。
 card: 講義の入力からAIへの貼り付けまで、3つのステップで説明します。
 type: article
+tasks: free
+cta: none
 order: 1
 updated: 2026-10-24
 ---
