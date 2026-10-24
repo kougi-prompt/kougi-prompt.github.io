@@ -22,7 +22,7 @@ export default {
   supportUrl: '',
 
   // Google Search Console の所有権の確認用。「HTML タグ」の content="..." の中身だけを貼る。空なら入れません
-  googleSiteVerification: '',
+  googleSiteVerification: '9NxwDZiu5ggSKrcMXtjNeBhJh-_lwEIbGqFG4-pManE',
 
   // 広告の設定。審査に通るまでは空のままで大丈夫です（空のあいだは広告枠も表示されません）
   ads: {
