@@ -158,6 +158,8 @@ npm run preview:site
 
 ツール本体は `src/app.html` です。Webサイト・アプリ・Claude のアーティファクトで同じファイルを使っています。直したら main ブランチに push すると、サイトに反映されます。
 
+「コピーしてAIを開く」のボタン（ChatGPT・Claude・Gemini）のリンク先は、`src/app.html` の `AIS` に書いてあります。AIサービスのURLが変わったときは、ここを書き換えてください。
+
 ---
 
 ## アプリ版について

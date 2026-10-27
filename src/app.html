@@ -424,6 +424,17 @@ mark.ph, .ph-count {
 .btn.primary:hover { background: var(--board-hover); border-color: var(--board-hover); }
 .btn.small { min-height: 32px; padding: 0 12px; font-size: 13px; }
 .btn.danger { color: var(--red); background: transparent; border-color: currentColor; }
+a.btn { text-decoration: none; }
+
+.ai-open { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; }
+.ai-open-label { margin: 0; font-size: 12.5px; font-weight: 700; color: var(--ink-2); }
+.ai-open-btns { display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto; }
+.ai-btn .i { width: 14px; height: 14px; color: var(--ink-2); }
+@media (max-width: 959.98px) {
+  .ai-open-btns { flex: 1 1 100%; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-left: 0; }
+  .ai-open-btns .btn { gap: 6px; padding: 0 8px; }
+}
+@media (max-width: 359.98px) { .ai-btn .i { display: none; } }
 
 .howto { margin: 0; padding: 12px 16px 12px 36px; display: grid; gap: 2px; font-size: 13px; color: var(--ink-2); background: var(--desk); border-radius: 12px; }
 .task-tip { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; font-size: 13px; line-height: 1.6; }
@@ -638,8 +649,13 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; z-index: 15; heigh
       </div>
     </div>
 
+    <div class="ai-open" id="ai-open" role="group" aria-labelledby="ai-open-label">
+      <p class="ai-open-label" id="ai-open-label">コピーしてAIを開く</p>
+      <div class="ai-open-btns" id="ai-open-btns"></div>
+    </div>
+
     <ol class="howto">
-      <li>「コピーする」を押す</li>
+      <li id="howto-copy">「コピーする」か、使っているAIのボタンを押す</li>
       <li>ChatGPT・Claude・Gemini などのチャット欄に貼り付ける</li>
       <li>【 】の部分を書き換えるか、資料のファイルを添付して送信する</li>
     </ol>
@@ -760,6 +776,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; z-index: 15; heigh
     alert: '<path d="M10.3 4.2L2.6 17.5a2 2 0 0 0 1.7 3h15.4a2 2 0 0 0 1.7-3L13.7 4.2a2 2 0 0 0-3.4 0z"/><path d="M12 9.5v4"/><path d="M12 17h.01"/>',
     share: '<path d="M12 3.5v11"/><path d="M8 7.5l4-4 4 4"/><path d="M5.5 11.5v7a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-7"/>',
     shareAndroid: '<circle cx="17.5" cy="5.5" r="2.5"/><circle cx="6.5" cy="12" r="2.5"/><circle cx="17.5" cy="18.5" r="2.5"/><path d="M8.7 10.7l6.6-3.9M8.7 13.3l6.6 3.9"/>',
+    external: '<path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4"/>',
   };
   const icon = name => `<svg class="i" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${ICONS[name] || ''}</svg>`;
 
@@ -1526,6 +1543,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; z-index: 15; heigh
     editNote: $('edit-note'), stale: $('stale'), regen: $('regen'), view: $('prompt-view'), edit: $('prompt-edit'),
     chars: $('char-count'), phCount: $('ph-count'), editBtn: $('edit-btn'), shareBtn: $('share-btn'), copyBtn: $('copy-btn'),
     tip: $('task-tip'), outPanel: $('out-panel'), mbarInfo: $('mbar-info'), mbarTask: $('mbar-task'), mbarShare: $('mbar-share'), mbarCopy: $('mbar-copy'), toast: $('toast'),
+    aiOpen: $('ai-open'), aiBtns: $('ai-open-btns'),
   };
 
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -1568,6 +1586,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; z-index: 15; heigh
     els.tasks.innerHTML = GROUPS.map(([g, gl]) => `<div class="task-group"><h3>${gl}</h3><div class="task-grid">`
       + TASKS.filter(t => t.group === g).map(t => `<button type="button" class="task" data-task="${t.id}" aria-pressed="false">${icon(t.icon)}<span class="task-t">${t.name}${t.tag ? `<span class="task-tag">${t.tag}</span>` : ''}</span><span class="task-d">${t.desc}</span></button>`).join('')
       + '</div></div>').join('');
+    els.aiBtns.innerHTML = AIS.map(([name, url]) => `<a class="btn ai-btn" href="${url}" target="_blank" rel="noopener" title="プロンプトをコピーして${name}を開く"><span>${name}</span>${icon('external')}</a>`).join('');
   }
   const syncChips = (host, isOn) => host.querySelectorAll('.chip').forEach(b => b.setAttribute('aria-pressed', String(isOn(b.dataset.val))));
   function syncFieldChips() {
@@ -1721,16 +1740,36 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; z-index: 15; heigh
     toastTimer = setTimeout(() => els.toast.classList.remove('show'), msg.length > 32 ? 4500 : 2800);
   }
   function legacyCopy(text) {
+    const prev = document.activeElement;
     const ta = document.createElement('textarea');
     ta.value = text;
     ta.setAttribute('readonly', '');
-    ta.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;';
+    // 16px 未満だと iOS が画面を拡大する。iOS は select() だけでは選択しないので範囲も指定する
+    ta.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;font-size:16px;';
     document.body.appendChild(ta);
     ta.select();
+    ta.setSelectionRange(0, text.length);
     let ok = false;
     try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
     ta.remove();
+    if (prev && prev.focus) prev.focus({ preventScroll: true });
     return ok;
+  }
+  function copied(text) {
+    haptic();
+    const n = (text.match(PH_PLAIN) || []).length;
+    toast(currentTask().copyToast || (n ? 'コピーしました。【 】の部分を書き換えてから送信してください' : 'コピーしました。AIのチャット欄に貼り付けてください'));
+    els.copyBtn.innerHTML = COPIED_LABEL;
+    els.mbarCopy.innerHTML = MCOPIED_LABEL;
+    clearTimeout(flashTimer);
+    flashTimer = setTimeout(() => { els.copyBtn.innerHTML = COPY_LABEL; els.mbarCopy.innerHTML = MCOPY_LABEL; }, 1800);
+  }
+  // 自動でコピーできなかったときは、編集欄の全文を選択して手でコピーしてもらう
+  function copyFailed() {
+    if (!state.editing) setEditing(true);
+    els.edit.focus();
+    els.edit.select();
+    toast('自動でコピーできませんでした。選択された文章をコピーしてください');
   }
   async function copyPrompt() {
     const text = currentText();
@@ -1747,20 +1786,26 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; z-index: 15; heigh
       } catch (e) { ok = false; }
     }
     if (!ok) ok = legacyCopy(text);
-    if (ok) {
-      haptic();
-      const n = (text.match(PH_PLAIN) || []).length;
-      toast(currentTask().copyToast || (n ? 'コピーしました。【 】の部分を書き換えてから送信してください' : 'コピーしました。AIのチャット欄に貼り付けてください'));
-      els.copyBtn.innerHTML = COPIED_LABEL;
-      els.mbarCopy.innerHTML = MCOPIED_LABEL;
-      clearTimeout(flashTimer);
-      flashTimer = setTimeout(() => { els.copyBtn.innerHTML = COPY_LABEL; els.mbarCopy.innerHTML = MCOPY_LABEL; }, 1800);
-    } else {
-      if (!state.editing) setEditing(true);
-      els.edit.focus();
-      els.edit.select();
-      toast('自動でコピーできませんでした。選択された文章をコピーしてください');
+    if (ok) copied(text); else copyFailed();
+  }
+  // AIのボタン：プロンプトをコピーしてから、リンクの既定の動作でそのAIの新しいチャットを新しいタブで開く。
+  // プロンプトはURLに入れない（長いと開けないことがあり、【 】の書き換えやファイルの添付も、貼り付けてからのほうが確実なため）
+  const AIS = [
+    ['ChatGPT', 'https://chatgpt.com/'],
+    ['Claude', 'https://claude.ai/new'],
+    ['Gemini', 'https://gemini.google.com/app'],
+  ];
+  function openAI(e) {
+    if (!e.target.closest('.ai-btn')) return;
+    const text = currentText();
+    // 新しいタブに移るとこのページはフォーカスを失い、非同期のクリップボード API が失敗することがあるので、同期でコピーできる方法を先に試す
+    if (legacyCopy(text)) { copied(text); return; }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(() => copied(text), copyFailed);
+      return;
     }
+    e.preventDefault();
+    copyFailed();
   }
   // アプリのみ：共有シートから AI アプリやメモに直接送る
   async function sharePrompt() {
@@ -1964,6 +2009,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; z-index: 15; heigh
   els.mbarCopy.addEventListener('click', copyPrompt);
   els.shareBtn.addEventListener('click', sharePrompt);
   els.mbarShare.addEventListener('click', sharePrompt);
+  els.aiBtns.addEventListener('click', openAI);
   els.mbarInfo.addEventListener('click', () => {
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     els.outPanel.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
@@ -2002,6 +2048,9 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; z-index: 15; heigh
       els.saveNote.textContent = '入力した内容はこの端末に自動で保存されます';
       $('privacy-note').textContent = '入力した内容はこの端末の中にだけ保存され、どこにも送信されません。';
       $('app-links').hidden = false;
+      // アプリでは「共有」から AI のアプリに直接送れるので、AIのボタンは出さない
+      els.aiOpen.hidden = true;
+      $('howto-copy').textContent = '「コピーする」を押す';
     }
     if (Native.Share) {
       const shareIcon = Cap.getPlatform() === 'android' ? 'shareAndroid' : 'share';
