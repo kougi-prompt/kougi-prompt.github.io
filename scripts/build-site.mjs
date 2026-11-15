@@ -286,6 +286,21 @@ for (const a of articles) {
   for (const task of a.tasks) if (!tips[task]) tips[task] = { href: `${a.slug}.html`, title: a.title };
 }
 const tipsScript = `<script>window.KOUGI_TIPS = ${JSON.stringify(tips).replace(/</g, '\\u003c')};</script>`;
+// 「講義データの引っ越し」のリンク（#import=…）には講義の内容が入っている。
+// 広告などの外部スクリプトが読み込まれる前にアドレス欄から消し、ページの中だけでツールに渡す（<head> の先頭に置くこと）
+const IMPORT_GUARD = `<script>
+(function () {
+  var KEY = '#import=';
+  function take() {
+    if (location.hash.indexOf(KEY) !== 0) return;
+    var code = location.hash.slice(KEY.length);
+    try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
+    if (window.KOUGI_RECEIVE) window.KOUGI_RECEIVE(code); else window.KOUGI_IMPORT = code;
+  }
+  take();
+  window.addEventListener('hashchange', take);
+})();
+</script>`;
 writeFileSync(join(out, 'index.html'), `<!doctype html>
 <html lang="ja">
 <head>
@@ -293,6 +308,7 @@ writeFileSync(join(out, 'index.html'), `<!doctype html>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
 <meta name="format-detection" content="telephone=no">
+${IMPORT_GUARD}
 ${headTags({ title: indexTitle, description: text(config.description), path: '', type: 'website' })}
 <script type="application/ld+json">${JSON.stringify(appJsonLd)}</script>
 ${tipsScript}

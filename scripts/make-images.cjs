@@ -139,6 +139,7 @@ async function main() {
 
     const narrow = width < 960; // 960px 未満は1列のスマホ向けレイアウト
     let { ctx, pg } = await open('light');
+    if (await pg.isVisible('#form-toggle')) await pg.click('#form-toggle'); // 入力済みの講義はたたまれているので、開いてから撮る
     await snap(pg, 'lecture');
     if (narrow) {
       await toPanel(pg, '#task-groups');

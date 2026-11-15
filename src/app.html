@@ -270,7 +270,16 @@ textarea.input { resize: vertical; min-height: 4.6em; }
   text-underline-offset: 3px;
 }
 .text-btn:hover { color: var(--red); }
+.text-btn.plain:hover { color: var(--ink); }
+.save-note .text-btn { margin-left: 1em; }
 .del-confirm { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 12.5px; }
+
+/* 入力済みの講義は入力欄をたたんで、要約だけを見せる */
+.lec-form { display: grid; gap: 16px; min-width: 0; }
+.lec-summary { display: grid; gap: 2px; font-size: 13px; line-height: 1.65; color: var(--ink-2); }
+.lec-summary p { margin: 0; }
+.lec-sum-meta { font-weight: 700; color: var(--ink); }
+.lec-sum-desc { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
 
 /* ---- tasks ---- */
 .task-groups { display: grid; gap: 18px; }
@@ -425,6 +434,11 @@ mark.ph, .ph-count {
 .btn.small { min-height: 32px; padding: 0 12px; font-size: 13px; }
 .btn.danger { color: var(--red); background: transparent; border-color: currentColor; }
 a.btn { text-decoration: none; }
+/* スマホではボタンを横幅いっぱいに並べる（「共有」が加わると2段になるため） */
+@media (max-width: 480px) {
+  .out-actions .btns { width: 100%; }
+  .out-actions .btns .btn { flex: 1 1 auto; }
+}
 
 .ai-open { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; }
 .ai-open-label { margin: 0; font-size: 12.5px; font-weight: 700; color: var(--ink-2); }
@@ -437,6 +451,25 @@ a.btn { text-decoration: none; }
 @media (max-width: 359.98px) { .ai-btn .i { display: none; } }
 
 .howto { margin: 0; padding: 12px 16px 12px 36px; display: grid; gap: 2px; font-size: 13px; color: var(--ink-2); background: var(--desk); border-radius: 12px; }
+.howto-alt { list-style: none; margin-top: 4px; }
+.follow > summary { font-size: 13px; }
+.follow-list { display: grid; gap: 6px; padding: 2px 10px 12px; }
+.follow-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 12px;
+  text-align: left;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--ink);
+  background: var(--field);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.follow-item:hover { border-color: var(--line-strong); }
+.follow-item .i { width: 16px; height: 16px; margin-top: 3px; color: var(--ink-2); }
 .task-tip { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; font-size: 13px; line-height: 1.6; }
 .task-tip-label { flex: none; padding: 0 8px; font-size: 11.5px; font-weight: 700; letter-spacing: .06em; color: var(--heading); border: 1px solid currentColor; border-radius: 999px; }
 .task-tip a { font-weight: 500; color: var(--pen); text-underline-offset: 3px; }
@@ -509,7 +542,35 @@ a.btn { text-decoration: none; }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
 @media (max-width: 959.98px) { .toast { bottom: calc(80px + env(safe-area-inset-bottom, 0px)); } }
 
+.foot .text-btn { padding: 0; font-size: inherit; }
 .foot-legal { margin: 14px 0 0; font-size: 12px; max-width: 62em; }
+
+/* ---- 講義データの引っ越し ---- */
+.dlg {
+  width: min(100% - 24px, 520px);
+  max-height: min(100% - 24px, 720px);
+  padding: 20px;
+  color: var(--ink);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+}
+.dlg[open] { display: grid; gap: 16px; }
+.dlg::backdrop { background: rgb(16 26 23 / .55); }
+.dlg-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.dlg-head h2 { margin: 0; font-family: var(--font-hand); font-weight: 600; font-size: 19px; line-height: 1.3; }
+.dlg-main { display: grid; gap: 16px; }
+.dlg p { margin: 0; }
+.dlg-lede, .dlg-note { font-size: 13px; color: var(--ink-2); }
+.dlg-sec { display: grid; gap: 10px; padding: 14px; background: var(--desk); border: 1px solid var(--line); border-radius: 12px; }
+.dlg-sec h3 { margin: 0; display: flex; align-items: center; gap: 8px; font-size: 14px; line-height: 1.45; }
+.dlg-sec .step-n { width: 22px; height: 22px; font-size: 12.5px; }
+.dlg-btns { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; }
+.dlg-count { font-size: 12.5px; color: var(--ink-2); }
+.dlg-msg { padding: 10px 12px; font-size: 13px; font-weight: 500; background: var(--board-soft); border-radius: 10px; }
+.btn:disabled { opacity: .5; cursor: default; }
+@media (max-width: 480px) { .dlg { padding: 16px; } }
 .foot-links { margin: 8px 0 0; font-size: 12.5px; }
 .foot-links a { color: var(--ink-2); text-underline-offset: 3px; }
 
@@ -539,66 +600,74 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; z-index: 15; heigh
     <section class="panel" aria-labelledby="h-lecture">
       <div class="panel-head">
         <h2 class="step-h" id="h-lecture"><span class="step-n">1</span>講義のこと</h2>
+        <button type="button" class="btn small" id="form-toggle" aria-controls="lec-form" hidden></button>
       </div>
 
       <div class="lec-bar" id="lec-tabs" role="group" aria-label="マイ講義"></div>
 
-      <div class="sample-note" id="sample-note" hidden>
-        <p>入力例が入っています。自分の講義の内容に書き換えてください。</p>
-        <button type="button" class="btn small" id="clear-sample">空欄にする</button>
+      <div class="lec-summary" id="lec-summary" hidden>
+        <p class="lec-sum-meta" id="lec-sum-meta"></p>
+        <p class="lec-sum-desc" id="lec-sum-desc"></p>
       </div>
 
-      <div class="field">
-        <label class="label" for="lec-name">講義名</label>
-        <input class="input" id="lec-name" type="text" autocomplete="off" placeholder="例）ミクロ経済学Ⅰ">
-      </div>
-      <div class="field">
-        <label class="label" for="lec-desc">どんな講義？<span class="hint">内容・進め方・苦手なところなど、自由に</span></label>
-        <textarea class="input" id="lec-desc" rows="4" placeholder="例）消費者と企業の行動をグラフと数式で分析する講義。毎回スライドのPDFが配られる。グラフの読み取りが苦手。"></textarea>
-      </div>
-      <div class="field">
-        <span class="label" id="l-field">分野<span class="hint">講義名から自動で選ばれます</span></span>
-        <div class="chips" id="field-chips" role="group" aria-labelledby="l-field"></div>
-      </div>
+      <div class="lec-form" id="lec-form">
+        <div class="sample-note" id="sample-note" hidden>
+          <p>入力例が入っています。自分の講義の内容に書き換えてください。</p>
+          <button type="button" class="btn small" id="clear-sample">空欄にする</button>
+        </div>
 
-      <details class="more" id="lec-more">
-        <summary><svg class="i" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 9l6 6 6-6"/></svg><span>くわしい設定</span><span class="more-vals" id="more-vals"></span></summary>
-        <div class="more-body">
-          <div class="field">
-            <span class="label" id="l-year">学年</span>
-            <div class="chips" id="year-chips" role="group" aria-labelledby="l-year"></div>
-          </div>
-          <div class="field">
-            <span class="label" id="l-level">いまの理解度</span>
-            <div class="chips" id="level-chips" role="group" aria-labelledby="l-level"></div>
-          </div>
-          <div class="field">
-            <span class="label" id="l-format">講義の形式</span>
-            <div class="chips" id="format-chips" role="group" aria-labelledby="l-format"></div>
-          </div>
-          <div class="field">
-            <span class="label" id="l-eval">評価方法<span class="hint">複数選べます</span></span>
-            <div class="chips" id="eval-chips" role="group" aria-labelledby="l-eval"></div>
-          </div>
-          <div class="field">
-            <span class="label" id="l-slot">時間割<span class="hint">講義の切り替えボタンに表示されます</span></span>
-            <div class="slot-row" role="group" aria-labelledby="l-slot">
-              <select class="input" id="lec-day" aria-label="曜日"></select>
-              <select class="input" id="lec-period" aria-label="時限"></select>
+        <div class="field">
+          <label class="label" for="lec-name">講義名</label>
+          <input class="input" id="lec-name" type="text" autocomplete="off" placeholder="例）ミクロ経済学Ⅰ">
+        </div>
+        <div class="field">
+          <label class="label" for="lec-desc">どんな講義？<span class="hint">内容・進め方・苦手なところなど、自由に</span></label>
+          <textarea class="input" id="lec-desc" rows="4" placeholder="例）消費者と企業の行動をグラフと数式で分析する講義。毎回スライドのPDFが配られる。グラフの読み取りが苦手。"></textarea>
+        </div>
+        <div class="field">
+          <span class="label" id="l-field">分野<span class="hint">講義名から自動で選ばれます</span></span>
+          <div class="chips" id="field-chips" role="group" aria-labelledby="l-field"></div>
+        </div>
+
+        <details class="more" id="lec-more">
+          <summary><svg class="i" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 9l6 6 6-6"/></svg><span>くわしい設定</span><span class="more-vals" id="more-vals"></span></summary>
+          <div class="more-body">
+            <div class="field">
+              <span class="label" id="l-year">学年</span>
+              <div class="chips" id="year-chips" role="group" aria-labelledby="l-year"></div>
+            </div>
+            <div class="field">
+              <span class="label" id="l-level">いまの理解度</span>
+              <div class="chips" id="level-chips" role="group" aria-labelledby="l-level"></div>
+            </div>
+            <div class="field">
+              <span class="label" id="l-format">講義の形式</span>
+              <div class="chips" id="format-chips" role="group" aria-labelledby="l-format"></div>
+            </div>
+            <div class="field">
+              <span class="label" id="l-eval">評価方法<span class="hint">複数選べます</span></span>
+              <div class="chips" id="eval-chips" role="group" aria-labelledby="l-eval"></div>
+            </div>
+            <div class="field">
+              <span class="label" id="l-slot">時間割<span class="hint">講義の切り替えボタンに表示されます</span></span>
+              <div class="slot-row" role="group" aria-labelledby="l-slot">
+                <select class="input" id="lec-day" aria-label="曜日"></select>
+                <select class="input" id="lec-period" aria-label="時限"></select>
+              </div>
             </div>
           </div>
-        </div>
-      </details>
+        </details>
 
-      <div class="lec-foot">
-        <p class="save-note" id="save-note">入力した内容はこのブラウザに自動で保存されます</p>
-        <div>
-          <button type="button" class="text-btn" id="del-btn">この講義を削除</button>
-          <span class="del-confirm" id="del-confirm" hidden>
-            <span>この講義を削除しますか？</span>
-            <button type="button" class="btn small danger" id="del-yes">削除する</button>
-            <button type="button" class="btn small" id="del-no">やめる</button>
-          </span>
+        <div class="lec-foot">
+          <p class="save-note"><span id="save-note">入力した内容はこのブラウザに自動で保存されます</span><button type="button" class="text-btn plain move-open">ほかの端末でも使う</button></p>
+          <div>
+            <button type="button" class="text-btn" id="del-btn">この講義を削除</button>
+            <span class="del-confirm" id="del-confirm" hidden>
+              <span>この講義を削除しますか？</span>
+              <button type="button" class="btn small danger" id="del-yes">削除する</button>
+              <button type="button" class="btn small" id="del-no">やめる</button>
+            </span>
+          </div>
         </div>
       </div>
     </section>
@@ -658,7 +727,12 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; z-index: 15; heigh
       <li id="howto-copy">「コピーする」か、使っているAIのボタンを押す</li>
       <li>ChatGPT・Claude・Gemini などのチャット欄に貼り付ける</li>
       <li>【 】の部分を書き換えるか、資料のファイルを添付して送信する</li>
+      <li class="howto-alt" id="howto-share" hidden>「共有」を押すと、ChatGPT などのアプリに直接送れます（貼り付けはいりません）</li>
     </ol>
+    <details class="more follow" id="follow">
+      <summary><svg class="i" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 9l6 6 6-6"/></svg><span>回答のあとに使える一言</span><span class="more-vals">押すとコピーされます</span></summary>
+      <div class="follow-list" id="follow-list"></div>
+    </details>
     <p class="task-tip" id="task-tip" hidden></p>
   </section>
   <!-- slot:rail -->
@@ -674,6 +748,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; z-index: 15; heigh
       <li>AIの回答には間違いが含まれることがあります。大事なところは講義資料や教科書で確かめましょう。</li>
       <li>レポートや課題でのAIの使い方は、大学や講義ごとにルールが決まっていることがあります。シラバスや先生の指示を確認してから使いましょう。</li>
       <li id="privacy-note">入力した内容はこのブラウザの中にだけ保存され、どこにも送信されません。</li>
+      <li id="move-hint">パソコンとスマホなど、別の端末でも同じ講義を使いたいときは、<button type="button" class="text-btn plain move-open">講義データの引っ越し</button>ができます。</li>
     </ul>
     <p class="foot-legal">ChatGPT は OpenAI、Claude は Anthropic、Gemini は Google の商標です。このツールはこれらの会社とは関係ありません。</p>
     <p class="foot-links" id="app-links" hidden><a href="privacy.html">プライバシーポリシー</a></p>
@@ -687,6 +762,40 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; z-index: 15; heigh
     <button type="button" class="btn primary" id="mbar-copy"></button>
   </div>
 </div>
+<dialog class="dlg" id="move-dlg" aria-labelledby="move-title">
+  <div class="dlg-head">
+    <h2 id="move-title">講義データの引っ越し</h2>
+    <button type="button" class="btn small" id="move-close">閉じる</button>
+  </div>
+
+  <div class="dlg-sec" id="move-incoming" hidden>
+    <p id="move-incoming-text"></p>
+    <div class="dlg-btns">
+      <button type="button" class="btn primary" id="move-accept">読み込む</button>
+      <button type="button" class="btn" id="move-decline">やめる</button>
+    </div>
+    <p class="dlg-note">読み込むと、この端末の講義に追加されます。同じ講義がすでにある場合は、届いた内容に置き換わります。</p>
+  </div>
+
+  <div class="dlg-main" id="move-main">
+    <p class="dlg-lede">パソコンとスマホなど、別の端末でも同じ講義を使えるようにします。</p>
+    <section class="dlg-sec" aria-labelledby="move-h1">
+      <h3 id="move-h1"><span class="step-n">1</span>この端末で、引っ越し用のリンクを作る</h3>
+      <div class="dlg-btns">
+        <button type="button" class="btn primary" id="move-copy" disabled></button>
+        <span class="dlg-count" id="move-count"></span>
+      </div>
+      <p class="dlg-note">リンクには、この端末に入力した講義の内容が入っています。LINE の「Keepメモ」やメールなどで、自分あてに送ってください。</p>
+    </section>
+    <section class="dlg-sec" aria-labelledby="move-h2">
+      <h3 id="move-h2"><span class="step-n">2</span>もう一方の端末で、リンクを開く</h3>
+      <p class="dlg-note">リンクを開くと、読み込むかどうかを聞かれます。うまく開けないときは、リンクを下の欄に貼り付けて「読み込む」を押してください。</p>
+      <textarea class="input" id="move-input" rows="2" placeholder="引っ越し用のリンクを貼り付け" aria-label="引っ越し用のリンク" spellcheck="false" autocomplete="off"></textarea>
+      <div class="dlg-btns"><button type="button" class="btn" id="move-load">読み込む</button></div>
+    </section>
+  </div>
+  <p class="dlg-msg" id="move-msg" role="status" hidden></p>
+</dialog>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
@@ -776,6 +885,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; z-index: 15; heigh
     alert: '<path d="M10.3 4.2L2.6 17.5a2 2 0 0 0 1.7 3h15.4a2 2 0 0 0 1.7-3L13.7 4.2a2 2 0 0 0-3.4 0z"/><path d="M12 9.5v4"/><path d="M12 17h.01"/>',
     share: '<path d="M12 3.5v11"/><path d="M8 7.5l4-4 4 4"/><path d="M5.5 11.5v7a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-7"/>',
     shareAndroid: '<circle cx="17.5" cy="5.5" r="2.5"/><circle cx="6.5" cy="12" r="2.5"/><circle cx="17.5" cy="18.5" r="2.5"/><path d="M8.7 10.7l6.6-3.9M8.7 13.3l6.6 3.9"/>',
+    fold: '<path d="M6 15l6-6 6 6"/>',
     external: '<path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4"/>',
   };
   const icon = name => `<svg class="i" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${ICONS[name] || ''}</svg>`;
@@ -867,10 +977,16 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; z-index: 15; heigh
   };
 
   /* ===== やりたいこと（17種類） ===== */
+  // follow は、AIの回答のあとに同じチャットで続けて送ると便利な一言
   const TASKS = [
     {
       id: 'summary', group: 'understand', icon: 'summary',
       name: '講義資料の要約', desc: 'スライドやPDFの要点をまとめる',
+      follow: [
+        'もっと短く、5行以内でまとめ直してください。',
+        'この中で試験に出そうなポイントを3つ選び、理由も教えてください。',
+        'いちばん難しい部分を、具体例を使ってもう一度くわしく説明してください。',
+      ],
       options: [
         { key: 'detail', label: '詳しさ', type: 'seg', default: 'std', choices: [['brief', 'ざっくり'], ['std', 'ふつう'], ['deep', 'くわしく']] },
       ],
@@ -910,6 +1026,11 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; z-index: 15; heigh
     {
       id: 'notes', group: 'understand', icon: 'notes',
       name: 'メモの整理', desc: '走り書きや文字起こしをノートに',
+      follow: [
+        '［要確認］の箇所について、考えられる内容の候補を挙げてください。推測であることがわかるように書いてください。',
+        'このノートをもとに、復習用の一問一答を10問作ってください。答えは最後にまとめてください。',
+        '重要な点だけを残して、半分くらいの長さにしてください。',
+      ],
       options: [
         { key: 'source', label: '元になるもの', type: 'seg', default: 'memo', wide: true, choices: [['memo', '自分のメモ'], ['photo', 'ノート・板書の写真'], ['transcript', '講義の文字起こし']] },
         { key: 'style', label: 'ノートの形', type: 'seg', default: 'outline', choices: [['outline', '見出し＋箇条書き'], ['cornell', 'コーネル式']] },
@@ -942,6 +1063,11 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; z-index: 15; heigh
     {
       id: 'explain', group: 'understand', icon: 'question',
       name: 'わからない所の解説', desc: 'つまずいた用語や箇所をかみ砕く',
+      follow: [
+        'まだよくわかりません。もっとやさしい言葉と、別の例で説明し直してください。',
+        'この内容が試験で問われるとしたら、どんな問題になりますか。例題を1つ出して、解き方も示してください。',
+        '似ている用語や考え方との違いを、表にまとめてください。',
+      ],
       options: [
         { key: 'topic', label: 'わからないところ', type: 'textarea', rows: 2, placeholder: '例）限界効用逓減の法則と、無差別曲線が右下がりになる理由' },
         { key: 'approach', label: '説明のしかた', type: 'seg', default: 'example', wide: true, choices: [['example', '具体例で'], ['analogy', 'たとえ話で'], ['step', '順を追って'], ['visual', '図や表で']] },
@@ -973,6 +1099,11 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; z-index: 15; heigh
     {
       id: 'glossary', group: 'understand', icon: 'glossary',
       name: '用語集づくり', desc: '重要な用語と意味を一覧に',
+      follow: [
+        'この用語集から、穴埋め形式の確認テストを10問作ってください。答えは最後にまとめてください。',
+        '特に重要な用語を5つ選び、具体例を使ってくわしく説明してください。',
+        '用語どうしのつながりがわかるように、グループに分けて整理してください。',
+      ],
       options: [
         { key: 'count', label: '用語の数', type: 'seg', default: '15', choices: [['10', '10個'], ['15', '15個'], ['30', '30個']] },
         { key: 'order', label: '並び順', type: 'seg', default: 'appear', choices: [['appear', '出てきた順'], ['importance', '重要な順'], ['kana', '五十音順']] },
@@ -1002,6 +1133,11 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; z-index: 15; heigh
     {
       id: 'preview', group: 'understand', icon: 'sunrise',
       name: '予習ガイド', desc: '次回のテーマの全体像をつかむ',
+      follow: [
+        '前提知識のところがよくわかりません。もっとやさしく説明してください。',
+        '予習の内容を確かめる問題を3問出してください。答えは、私が回答してから教えてください。',
+        '講義中に先生に質問するとよさそうなことを、3つ挙げてください。',
+      ],
       options: [
         { key: 'topic', label: '次回のテーマ', type: 'text', placeholder: '例）需要の価格弾力性' },
         { key: 'time', label: '予習にかける時間', type: 'seg', default: '30', choices: [['15', '15分'], ['30', '30分'], ['60', '1時間']] },
@@ -1028,6 +1164,11 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; z-index: 15; heigh
     {
       id: 'free', group: 'understand', icon: 'chat',
       name: '自由に相談', desc: '講義の前提を伝えて何でも聞く',
+      follow: [
+        'もっと具体的に、今日からできることを3つに絞って教えてください。',
+        'いまの回答の理由や根拠を、もう少しくわしく説明してください。',
+        'ほかの考え方ややり方があれば、それも教えてください。',
+      ],
       options: [
         { key: 'q', label: '聞きたいこと', type: 'textarea', rows: 3, placeholder: '例）次の小テストまで1週間。何から復習すればいい？' },
       ],
@@ -1047,6 +1188,11 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; z-index: 15; heigh
     {
       id: 'plan', group: 'exam', icon: 'calendar',
       name: '学習計画', desc: '試験日から逆算して計画を立てる',
+      follow: [
+        '今日やる分について、具体的な勉強の手順を教えてください。',
+        '予定より遅れています。残りの日数で立て直した計画を作ってください。',
+        '1日に使える時間が半分になった場合の計画に作り直してください。',
+      ],
       options: [
         { key: 'date', label: '試験日', type: 'date' },
         { key: 'hours', label: '1日に使える時間', type: 'seg', default: '60', choices: [['30', '30分'], ['60', '1時間'], ['120', '2時間'], ['180', '3時間以上']] },
@@ -1086,6 +1232,11 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; z-index: 15; heigh
     {
       id: 'quiz', group: 'exam', icon: 'target',
       name: '想定問題', desc: '出そうな問題を解説つきで',
+      follow: [
+        'これから私の解答を送るので、採点して、間違えた問題をくわしく解説してください。',
+        '私が間違えた問題と同じポイントを問う、類題を3問出してください。',
+        '同じ範囲から、少し難しい問題をあと5問出してください。',
+      ],
       options: [
         { key: 'types', label: '問題の形式', type: 'multi', min: 1, wide: true, choices: [['choice', '選択式'], ['tf', '○×'], ['fill', '穴埋め'], ['short', '短答'], ['essay', '論述'], ['calc', '計算']], defaultFn: L => (DEFAULT_QTYPES[L.field] || ['choice', 'short', 'essay']).slice() },
         { key: 'count', label: '問題数', type: 'seg', default: '10', choices: [['5', '5問'], ['10', '10問'], ['20', '20問']] },
@@ -1123,6 +1274,11 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; z-index: 15; heigh
     {
       id: 'cards', group: 'exam', icon: 'cards',
       name: '暗記カード', desc: '一問一答をAnki・Quizlet用にも',
+      follow: [
+        'これまでと内容が重ならないカードを、あと10枚追加してください。',
+        '答えが長いカードを、1枚で1つのことだけを問うように分けてください。',
+        '覚えにくそうなカードに、語呂合わせなどの覚え方のコツを付けてください。',
+      ],
       options: [
         { key: 'count', label: '枚数', type: 'seg', default: '20', choices: [['10', '10枚'], ['20', '20枚'], ['40', '40枚']] },
         { key: 'format', label: '出力の形', type: 'seg', default: 'table', choices: [['table', '表'], ['tsv', 'Anki・Quizlet用']] },
@@ -1150,6 +1306,11 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; z-index: 15; heigh
     {
       id: 'cram', group: 'exam', icon: 'bolt',
       name: '直前まとめシート', desc: '試験前に見返す1枚にまとめる',
+      follow: [
+        'さらに絞り込んで、試験の直前5分で見返せる分量にしてください。',
+        'このシートの内容から、最終確認の問題を5問出してください。答えは最後にまとめてください。',
+        '覚えにくい項目に、語呂合わせなどの覚え方のコツを付けてください。',
+      ],
       options: [
         { key: 'range', label: '試験範囲', type: 'text', placeholder: '例）第1回〜第7回' },
         { key: 'carry', label: '持ち込み', type: 'seg', default: 'none', choices: [['none', '持ち込み不可'], ['a4', 'A4用紙1枚まで'], ['any', '資料持ち込み可']] },
@@ -1182,6 +1343,11 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; z-index: 15; heigh
     {
       id: 'theme', group: 'report', icon: 'bulb',
       name: 'テーマ出し', desc: '課題文から書ける切り口を探す',
+      follow: [
+        'それぞれのテーマ案について、予想される反論や弱点を挙げてください。',
+        'もっと範囲を絞った、具体的なテーマ案をあと3つ出してください。',
+        'いちばん書きやすそうなテーマ案を1つ選び、理由と、調べ始める手順を教えてください。',
+      ],
       options: [
         { key: 'assignment', label: '課題文', type: 'textarea', rows: 3, placeholder: '例）講義で扱った「市場の失敗」の事例を1つ取り上げ、政府がとるべき対応を論じなさい。' },
         { key: 'length', label: '文字数', type: 'text', placeholder: '例）2000字' },
@@ -1208,6 +1374,11 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; z-index: 15; heigh
     {
       id: 'search', group: 'report', icon: 'search',
       name: '文献さがし', desc: '調べるキーワードと探し方を知る',
+      follow: [
+        '挙げてくれたキーワードを使った検索式の例（AND・OR の組み合わせ）を、5つ示してください。',
+        '文献が多すぎて選べません。絞り込むための条件や観点を教えてください。',
+        '見つけた文献を読む順番の決め方と、メモの取り方を教えてください。',
+      ],
       options: [
         { key: 'theme', label: '調べたいテーマ', type: 'text', placeholder: '例）炭素税が家計に与える影響' },
         { key: 'kinds', label: '探したい資料', type: 'multi', wide: true, default: ['paper', 'book'], choices: [['paper', '論文'], ['book', '本'], ['stats', '統計データ'], ['news', '新聞・ニュース'], ['gov', '公的機関の資料']] },
@@ -1233,6 +1404,11 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; z-index: 15; heigh
     {
       id: 'outline', group: 'report', icon: 'outline',
       name: '構成案づくり', desc: '序論・本論・結論の骨組みをつくる',
+      follow: [
+        'この構成の弱いところ（論理の飛躍や、根拠が足りない部分）を指摘してください。',
+        '各段落で書く内容を、もう一段くわしくしてください。本文は自分で書くので、文章にはしないでください。',
+        '指定の文字数に収まるように、各パートの文字数の配分を見直してください。',
+      ],
       options: [
         { key: 'theme', label: 'テーマ・課題文', type: 'textarea', rows: 2, placeholder: '例）炭素税は温暖化対策として有効か' },
         { key: 'length', label: '文字数', type: 'text', placeholder: '例）2000字' },
@@ -1269,6 +1445,11 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; z-index: 15; heigh
     {
       id: 'fulltext', group: 'report', icon: 'draft',
       name: '全文の作成', desc: '構成やメモから本文を書いてもらう', tag: '要注意',
+      follow: [
+        '先生が読んだときに指摘しそうな点を、重要な順に挙げてください。',
+        '論理が弱い箇所を挙げて、どう直すとよいかの方向性を教えてください。',
+        '全体の流れは変えずに、2割ほど短くしてください。',
+      ],
       notice: {
         title: '使う前に必ず確認してください',
         items: [
@@ -1325,6 +1506,11 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; z-index: 15; heigh
     {
       id: 'review', group: 'report', icon: 'pen',
       name: '下書きの添削', desc: '書いた文章の改善点を指摘',
+      follow: [
+        '改善点のうち、優先して直すべきものを3つに絞ってください。',
+        'いちばん大きな問題点について、直し方の例を1つだけ示してください。',
+        'これから直した文章を送るので、前回の指摘が直っているかを確認してください。',
+      ],
       options: [
         { key: 'focus', label: '特に見てほしい点', type: 'multi', wide: true, default: ['logic', 'style'], choices: [['logic', '論理の流れ'], ['evidence', '根拠の強さ'], ['style', '文章表現'], ['typo', '誤字脱字'], ['content', '内容の正確さ'], ['cite', '引用の書き方']] },
         { key: 'assignment', label: '課題文（あれば）', type: 'textarea', rows: 2, placeholder: '貼り付けると、課題の問いに答えているかも確認してもらえます' },
@@ -1355,6 +1541,11 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; z-index: 15; heigh
     {
       id: 'reading', group: 'report', icon: 'book',
       name: '文献の読解', desc: '論文やゼミの文献を整理する',
+      follow: [
+        '著者の主張に対して考えられる反論を、3つ挙げてください。',
+        '専門用語を使わずに、高校生にもわかるように説明し直してください。',
+        'この文献の内容を、3分で説明できる長さにまとめてください。',
+      ],
       options: [
         { key: 'purpose', label: '読む目的', type: 'seg', default: 'understand', wide: true, choices: [['understand', '内容を理解したい'], ['seminar', 'ゼミで発表・議論する'], ['report', 'レポートに使う']] },
       ],
@@ -1380,6 +1571,11 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; z-index: 15; heigh
     {
       id: 'present', group: 'report', icon: 'screen',
       name: '発表の準備', desc: 'スライド構成と想定質問をつくる',
+      follow: [
+        '各スライドで話す内容を、話し言葉の台本にしてください。',
+        '発表時間を1分短くするなら、どこを削るとよいか教えてください。',
+        '想定質問をあと5つ追加し、答え方のポイントも示してください。',
+      ],
       options: [
         { key: 'theme', label: '発表テーマ', type: 'text', placeholder: '例）コンビニ業界の価格競争と寡占' },
         { key: 'minutes', label: '発表時間', type: 'seg', default: '10', choices: [['5', '5分'], ['10', '10分'], ['15', '15分'], ['20', '20分']] },
@@ -1407,11 +1603,12 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; z-index: 15; heigh
       },
     },
   ];
-  const TASK_MAP = Object.fromEntries(TASKS.map(t => [t.id, t]));
+  // URL の「#」や読み込んだデータの値で引くので、「constructor」などが当たらないようにプロトタイプのない入れ物にする
+  const TASK_MAP = Object.assign(Object.create(null), Object.fromEntries(TASKS.map(t => [t.id, t])));
 
   /* ===== 状態と保存 ===== */
   const STORE_KEY = 'kougi-prompt-maker:v1';
-  const state = { lectures: [], activeId: '', taskId: 'summary', moreOpen: false, editing: false, editBase: '', generated: '' };
+  const state = { lectures: [], activeId: '', taskId: 'summary', moreOpen: false, formOpen: false, formHold: '', editing: false, editBase: '', generated: '' };
 
   const uid = () => Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-4);
   function blankLecture() {
@@ -1430,11 +1627,12 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; z-index: 15; heigh
     if (typeof x.id === 'string' && x.id) L.id = x.id;
     if (typeof x.name === 'string') L.name = x.name;
     if (typeof x.desc === 'string') L.desc = x.desc;
-    if (FIELDS[x.field]) L.field = x.field;
+    const has = (table, k) => typeof k === 'string' && Object.prototype.hasOwnProperty.call(table, k);
+    if (has(FIELDS, x.field)) L.field = x.field;
     L.fieldManual = !!x.fieldManual;
-    if (YEAR_WHO[x.year]) L.year = x.year;
-    if (LEVEL_TEXT[x.level]) L.level = x.level;
-    if (FORMAT_TEXT[x.format]) L.format = x.format;
+    if (has(YEAR_WHO, x.year)) L.year = x.year;
+    if (has(LEVEL_TEXT, x.level)) L.level = x.level;
+    if (has(FORMAT_TEXT, x.format)) L.format = x.format;
     if (Array.isArray(x.evals)) L.evals = EVALS.map(e => e[0]).filter(k => x.evals.includes(k));
     if (DAYS.includes(x.day)) L.day = x.day;
     if (PERIODS.includes(String(x.period))) L.period = String(x.period);
@@ -1543,7 +1741,10 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; z-index: 15; heigh
     editNote: $('edit-note'), stale: $('stale'), regen: $('regen'), view: $('prompt-view'), edit: $('prompt-edit'),
     chars: $('char-count'), phCount: $('ph-count'), editBtn: $('edit-btn'), shareBtn: $('share-btn'), copyBtn: $('copy-btn'),
     tip: $('task-tip'), outPanel: $('out-panel'), mbarInfo: $('mbar-info'), mbarTask: $('mbar-task'), mbarShare: $('mbar-share'), mbarCopy: $('mbar-copy'), toast: $('toast'),
-    aiOpen: $('ai-open'), aiBtns: $('ai-open-btns'),
+    aiOpen: $('ai-open'), aiBtns: $('ai-open-btns'), followList: $('follow-list'),
+    form: $('lec-form'), formToggle: $('form-toggle'), summary: $('lec-summary'), sumMeta: $('lec-sum-meta'), sumDesc: $('lec-sum-desc'),
+    moveDlg: $('move-dlg'), moveMain: $('move-main'), moveIncoming: $('move-incoming'), moveIncomingText: $('move-incoming-text'),
+    moveCopy: $('move-copy'), moveCount: $('move-count'), moveInput: $('move-input'), moveMsg: $('move-msg'),
   };
 
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -1608,16 +1809,34 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; z-index: 15; heigh
     syncChips(els.evals, k => L.evals.includes(k));
     renderMoreVals();
   }
+  const detailVals = L => [
+    L.year && labelOf(YEARS, L.year),
+    L.level && labelOf(LEVELS, L.level),
+    L.format && labelOf(FORMATS, L.format),
+    L.evals.length > 0 && L.evals.map(k => EVAL_TEXT[k]).join('・'),
+    slotLabel(L),
+  ].filter(Boolean);
   function renderMoreVals() {
-    const L = active();
-    const vals = [
-      L.year && labelOf(YEARS, L.year),
-      L.level && labelOf(LEVELS, L.level),
-      L.format && labelOf(FORMATS, L.format),
-      L.evals.length > 0 && L.evals.map(k => EVAL_TEXT[k]).join('・'),
-      slotLabel(L),
-    ].filter(Boolean);
+    const vals = detailVals(active());
     els.moreVals.textContent = vals.length ? vals.join(' / ') : '学年・理解度・評価方法など（任意）。入れるとプロンプトがより的確になります';
+  }
+  // 入力済みの講義は入力欄をたたみ、「やりたいこと」をすぐ選べるようにする。名前のない講義と入力例は開いたままにする
+  const isReady = L => !L.sample && !!clean(L.name);
+  function renderForm() {
+    const L = active();
+    const ready = isReady(L);
+    if (!ready) state.formHold = L.id; // 書いている途中でたたまれないよう、この講義は開いたままにする
+    const open = state.formOpen || state.formHold === L.id;
+    els.form.hidden = !open;
+    els.summary.hidden = open;
+    els.formToggle.hidden = !ready;
+    els.formToggle.innerHTML = open ? `${icon('fold')}<span>たたむ</span>` : `${icon('edit')}<span>内容を編集</span>`;
+    els.formToggle.setAttribute('aria-expanded', String(open));
+    if (open) return;
+    const f = fieldOf(L);
+    els.sumMeta.textContent = [f && f.label].concat(detailVals(L)).filter(Boolean).join(' / ');
+    els.sumMeta.hidden = !els.sumMeta.textContent;
+    els.sumDesc.textContent = clean(L.desc) || '講義の説明がまだありません。「内容を編集」から書くと、AIの回答が講義に合いやすくなります。';
   }
   function fillForm() {
     const L = active();
@@ -1642,6 +1861,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; z-index: 15; heigh
     const tip = window.KOUGI_TIPS && window.KOUGI_TIPS[t.id];
     els.tip.hidden = !tip;
     els.tip.innerHTML = tip ? `<span class="task-tip-label">コツ</span><a href="${esc(tip.href)}">${esc(tip.title)}</a>` : '';
+    els.followList.innerHTML = t.follow.map(x => `<button type="button" class="follow-item">${icon('copy')}<span>${esc(x)}</span></button>`).join('');
   }
   function renderTaskOptions() {
     const L = active();
@@ -1746,7 +1966,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; z-index: 15; heigh
     ta.setAttribute('readonly', '');
     // 16px 未満だと iOS が画面を拡大する。iOS は select() だけでは選択しないので範囲も指定する
     ta.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;font-size:16px;';
-    document.body.appendChild(ta);
+    (els.moveDlg.open ? els.moveDlg : document.body).appendChild(ta);
     ta.select();
     ta.setSelectionRange(0, text.length);
     let ok = false;
@@ -1771,22 +1991,22 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; z-index: 15; heigh
     els.edit.select();
     toast('自動でコピーできませんでした。選択された文章をコピーしてください');
   }
+  // コピーできたかどうかを返す（アプリの機能 → クリップボード API → 古い方式の順に試す）
+  async function copyText(text) {
+    if (Native.Clipboard) {
+      try { await Native.Clipboard.write({ string: text }); return true; } catch (e) { /* 次の方法へ */ }
+    }
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text);
+        return true;
+      }
+    } catch (e) { /* 次の方法へ */ }
+    return legacyCopy(text);
+  }
   async function copyPrompt() {
     const text = currentText();
-    let ok = false;
-    if (Native.Clipboard) {
-      try { await Native.Clipboard.write({ string: text }); ok = true; } catch (e) { ok = false; }
-    }
-    if (!ok) {
-      try {
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          await navigator.clipboard.writeText(text);
-          ok = true;
-        }
-      } catch (e) { ok = false; }
-    }
-    if (!ok) ok = legacyCopy(text);
-    if (ok) copied(text); else copyFailed();
+    if (await copyText(text)) copied(text); else copyFailed();
   }
   // AIのボタン：プロンプトをコピーしてから、リンクの既定の動作でそのAIの新しいチャットを新しいタブで開く。
   // プロンプトはURLに入れない（長いと開けないことがあり、【 】の書き換えやファイルの添付も、貼り付けてからのほうが確実なため）
@@ -1807,12 +2027,130 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; z-index: 15; heigh
     e.preventDefault();
     copyFailed();
   }
-  // アプリのみ：共有シートから AI アプリやメモに直接送る
+  // アプリとスマホのブラウザ：共有シートから AI のアプリやメモに直接送る
+  const canWebShare = !isNative && typeof navigator.share === 'function' && window.matchMedia('(hover: none) and (pointer: coarse)').matches;
   async function sharePrompt() {
-    if (!Native.Share) return;
+    const text = currentText();
     try {
-      await Native.Share.share({ text: currentText(), dialogTitle: 'プロンプトを送る' });
-    } catch (e) { /* 共有をキャンセルしたときも例外になるので何もしない */ }
+      if (Native.Share) await Native.Share.share({ text, dialogTitle: 'プロンプトを送る' });
+      else await navigator.share({ text });
+    } catch (e) {
+      // 共有をやめたときも例外になる。ブラウザでそれ以外の理由で失敗したら、コピーに切り替える
+      if (!Native.Share && e && e.name !== 'AbortError') copyPrompt();
+    }
+  }
+
+  /* ===== 講義データの引っ越し（別の端末でも同じ講義を使う） ===== */
+  // 講義データを圧縮して、リンクの「#」より後ろに入れる。「#」より後ろはサーバーに送られないので、内容は運営者に渡らない
+  const MOVE_HASH = 'import=';
+  const MOVE_RE = /KPM1([zj])([A-Za-z0-9_-]+)/;
+  const MOVE_MAX = 2e6; // 展開後の大きさの上限（約2MB）
+  const MOVE_COPY_LABEL = `${icon('copy')}<span>引っ越し用のリンクをコピー</span>`;
+  const canMove = !isNative && typeof els.moveDlg.showModal === 'function';
+  const hasContent = L => !L.sample && !!(clean(L.name) || clean(L.desc));
+  const toB64u = bytes => {
+    let bin = '';
+    for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+    return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  };
+  const fromB64u = str => Uint8Array.from(atob(str.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0));
+  async function pump(bytes, transform) {
+    const reader = new Blob([bytes]).stream().pipeThrough(transform).getReader();
+    const chunks = [];
+    let size = 0;
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      size += value.length;
+      if (size > MOVE_MAX) { reader.cancel(); throw new Error('too large'); }
+      chunks.push(value);
+    }
+    const out = new Uint8Array(size);
+    let at = 0;
+    for (const c of chunks) { out.set(c, at); at += c.length; }
+    return out;
+  }
+  async function encodeMove(lectures) {
+    const raw = new TextEncoder().encode(JSON.stringify({ v: 1, lectures }));
+    try {
+      return 'KPM1z' + toB64u(await pump(raw, new CompressionStream('deflate-raw')));
+    } catch (e) {
+      return 'KPM1j' + toB64u(raw); // 圧縮できないブラウザでは、そのまま入れる
+    }
+  }
+  async function decodeMove(text) {
+    const m = MOVE_RE.exec(String(text).replace(/\s+/g, ''));
+    if (!m) throw new Error('format');
+    let bytes = fromB64u(m[2]);
+    if (m[1] === 'z') bytes = await pump(bytes, new DecompressionStream('deflate-raw'));
+    const data = JSON.parse(new TextDecoder().decode(bytes));
+    const list = data && Array.isArray(data.lectures) ? data.lectures.slice(0, 200).map(normalizeLecture).filter(hasContent) : [];
+    if (!list.length) throw new Error('empty');
+    return list;
+  }
+  let moveLink = '';
+  let incoming = null;
+  function moveSay(msg) {
+    els.moveMsg.textContent = msg;
+    els.moveMsg.hidden = !msg;
+  }
+  function showMoveView(isIncoming) {
+    els.moveIncoming.hidden = !isIncoming;
+    els.moveMain.hidden = isIncoming;
+    moveSay('');
+  }
+  async function openMove() {
+    const mine = state.lectures.filter(hasContent);
+    showMoveView(false);
+    incoming = null;
+    moveLink = '';
+    els.moveInput.value = '';
+    els.moveCopy.disabled = true;
+    els.moveCount.textContent = mine.length ? `講義 ${mine.length}件` : 'まだ講義が入力されていません';
+    els.moveDlg.showModal();
+    if (!mine.length) return;
+    moveLink = location.origin + location.pathname + '#' + MOVE_HASH + await encodeMove(mine);
+    els.moveCopy.disabled = false;
+  }
+  function importLectures(list) {
+    // 入力例や空の講義は残さず、同じ講義は届いた内容に置き換える
+    const mine = state.lectures.filter(hasContent);
+    for (const L of list) {
+      const i = mine.findIndex(x => x.id === L.id);
+      if (i >= 0) mine[i] = L; else mine.push(L);
+    }
+    incoming = null;
+    state.lectures = mine;
+    state.activeId = list[0].id;
+    state.formOpen = false;
+    state.formHold = '';
+    switchLecture();
+    saveNow();
+    if (els.moveDlg.open) els.moveDlg.close();
+    toast(`講義を${list.length}件読み込みました`);
+  }
+  // 引っ越し用のリンクから開かれたとき：中身を確かめてから、読み込むかどうかを聞く
+  async function receiveMove(code) {
+    // 再読み込みで何度も聞かれないよう、アドレス欄と履歴からデータを消す
+    try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* 書き換えられない環境ではそのまま */ }
+    if (isNative) return;
+    let list;
+    try {
+      list = await decodeMove(code);
+    } catch (e) {
+      toast('引っ越し用のリンクを読み込めませんでした。リンクが途中で切れていないか確かめてください');
+      return;
+    }
+    const names = list.map(L => clean(L.name) || '名前未設定の講義');
+    const text = `講義データが届いています（${list.length}件）：${names.slice(0, 5).join('、')}${names.length > 5 ? ` ほか${names.length - 5}件` : ''}`;
+    if (!canMove) {
+      if (window.confirm(`${text}\nこの端末に読み込みますか？`)) importLectures(list);
+      return;
+    }
+    incoming = list;
+    els.moveIncomingText.textContent = `${text}。この端末に読み込みますか？`;
+    showMoveView(true);
+    if (!els.moveDlg.open) els.moveDlg.showModal();
   }
 
   /* ===== 操作 ===== */
@@ -1822,6 +2160,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; z-index: 15; heigh
     syncFieldChips();
     syncDetailChips();
     renderSample();
+    renderForm();
     renderTaskOptions();
     updatePrompt();
   }
@@ -1837,6 +2176,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; z-index: 15; heigh
     L.sample = false;
     renderSample();
     renderTabs();
+    renderForm();
   }
   function hideDelConfirm() {
     els.delConfirm.hidden = true;
@@ -1859,6 +2199,13 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; z-index: 15; heigh
       switchLecture();
     }
   });
+  els.formToggle.addEventListener('click', () => {
+    const open = els.form.hidden;
+    state.formOpen = open;
+    if (!open) state.formHold = '';
+    hideDelConfirm();
+    renderForm();
+  });
   els.clearSample.addEventListener('click', () => {
     const L = active();
     Object.assign(L, blankLecture(), { id: L.id });
@@ -1872,6 +2219,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; z-index: 15; heigh
     if (!L.fieldManual) L.field = detectField(L.name);
     touch(L);
     renderTabs();
+    renderForm();
     syncFieldChips();
     if (L.field !== before) renderTaskOptions();
     updatePrompt();
@@ -1950,16 +2298,19 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; z-index: 15; heigh
     toast('講義を削除しました');
   });
 
-  els.tasks.addEventListener('click', e => {
-    const b = e.target.closest('.task');
-    if (!b || b.dataset.task === state.taskId) return;
-    state.taskId = b.dataset.task;
+  function selectTask(id) {
+    if (!TASK_MAP[id] || id === state.taskId) return;
+    state.taskId = id;
     if (state.editing) setEditing(false);
     renderTaskHead();
     renderTaskOptions();
     updatePrompt();
     els.view.scrollTop = 0;
     persist();
+  }
+  els.tasks.addEventListener('click', e => {
+    const b = e.target.closest('.task');
+    if (b) selectTask(b.dataset.task);
   });
 
   els.opts.addEventListener('click', e => {
@@ -2014,10 +2365,46 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; z-index: 15; heigh
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     els.outPanel.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
   });
-  window.addEventListener('hashchange', () => {
-    const b = els.tasks.querySelector(`.task[data-task="${location.hash.slice(1)}"]`);
-    if (b) b.click();
+  els.followList.addEventListener('click', async e => {
+    const b = e.target.closest('.follow-item');
+    if (!b) return;
+    const ok = await copyText(b.textContent);
+    if (ok) haptic();
+    toast(ok ? 'コピーしました。同じチャットに続けて送ってください' : 'コピーできませんでした。文章を見ながら入力してください');
   });
+  document.querySelectorAll('.move-open').forEach(b => {
+    b.hidden = !canMove;
+    b.addEventListener('click', openMove);
+  });
+  $('move-hint').hidden = !canMove;
+  els.moveCopy.addEventListener('click', async () => {
+    if (!moveLink) return;
+    const ok = await copyText(moveLink);
+    moveSay(ok ? 'コピーしました。もう一方の端末に送って、リンクを開いてください。' : 'コピーできませんでした。別のブラウザでお試しください。');
+  });
+  $('move-load').addEventListener('click', async () => {
+    try {
+      importLectures(await decodeMove(els.moveInput.value));
+    } catch (e) {
+      moveSay('読み込めませんでした。リンクが途中で切れていないか確かめて、もう一度貼り付けてください。');
+    }
+  });
+  $('move-accept').addEventListener('click', () => { if (incoming) importLectures(incoming); });
+  $('move-decline').addEventListener('click', () => els.moveDlg.close());
+  $('move-close').addEventListener('click', () => els.moveDlg.close());
+  // 画面の外側（暗い部分）を押したら閉じる
+  els.moveDlg.addEventListener('click', e => {
+    if (e.target !== els.moveDlg) return;
+    const r = els.moveDlg.getBoundingClientRect();
+    if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) els.moveDlg.close();
+  });
+  // 「#summary」のようなタスクの指定と、「#import=…」の引っ越し用リンクを受け取る
+  function readHash() {
+    const h = location.hash.slice(1);
+    if (h.startsWith(MOVE_HASH)) receiveMove(h.slice(MOVE_HASH.length));
+    else selectTask(h);
+  }
+  window.addEventListener('hashchange', readHash);
   window.addEventListener('pagehide', saveNow);
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') saveNow(); });
 
@@ -2041,8 +2428,8 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; z-index: 15; heigh
       state.activeId = L.id;
     }
     // 記事のリンクなどから「#summary」のように開かれたら、そのタスクを選んだ状態にする
-    const hashTask = location.hash.slice(1);
-    if (TASK_MAP[hashTask]) state.taskId = hashTask;
+    const hash = location.hash.slice(1);
+    if (TASK_MAP[hash]) state.taskId = hash;
     if (!canSave) els.saveNote.textContent = 'このブラウザでは保存できないため、ページを閉じると入力内容は消えます';
     if (isNative) {
       els.saveNote.textContent = '入力した内容はこの端末に自動で保存されます';
@@ -2052,24 +2439,33 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; z-index: 15; heigh
       els.aiOpen.hidden = true;
       $('howto-copy').textContent = '「コピーする」を押す';
     }
-    if (Native.Share) {
-      const shareIcon = Cap.getPlatform() === 'android' ? 'shareAndroid' : 'share';
+    if (Native.Share || canWebShare) {
+      const android = isNative ? Cap.getPlatform() === 'android' : /Android/i.test(navigator.userAgent);
+      const shareIcon = android ? 'shareAndroid' : 'share';
       els.shareBtn.innerHTML = `${icon(shareIcon)}<span>共有</span>`;
       els.mbarShare.innerHTML = icon(shareIcon);
       els.shareBtn.hidden = false;
       els.mbarShare.hidden = false;
+      $('howto-share').hidden = false;
     }
 
     const now = new Date();
     els.sheetDate.textContent = `${now.getFullYear()} . ${String(now.getMonth() + 1).padStart(2, '0')} . ${String(now.getDate()).padStart(2, '0')}`;
     els.copyBtn.innerHTML = COPY_LABEL;
     els.mbarCopy.innerHTML = MCOPY_LABEL;
+    els.moveCopy.innerHTML = MOVE_COPY_LABEL;
     els.editBtn.innerHTML = `${icon('edit')}<span>編集する</span>`;
     els.more.open = state.moreOpen;
 
     buildStaticControls();
     renderTaskHead();
     refreshLecture();
+    // Webサイト版では、ページの先頭のスクリプトが引っ越し用のデータを先に受け取っている（window.KOUGI_IMPORT。外部のスクリプトに読ませないため）
+    const early = window.KOUGI_IMPORT;
+    window.KOUGI_IMPORT = undefined;
+    window.KOUGI_RECEIVE = receiveMove;
+    if (typeof early === 'string') receiveMove(early);
+    else if (hash.startsWith(MOVE_HASH)) receiveMove(hash.slice(MOVE_HASH.length));
   }
   init().catch(e => console.error(e));
 })();
